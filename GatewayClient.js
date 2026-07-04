@@ -13,7 +13,7 @@ class GatewayClient {
   }
 
   processRequest() {
-    this.logger.log("INFO", "=== NUOVA CONNESSIONE GATEWAY ===");
+    this.logger.log("INFO", "NUOVA CONNESSIONE GATEWAY");
 
     try {
       if (!this.e || !this.e.postData || !this.e.postData.contents) {
@@ -21,12 +21,12 @@ class GatewayClient {
       }
 
       const payload = JSON.parse(this.e.postData.contents);
-      
+
       // 1. Identifichiamo il client
       // L'approccio migliore è leggerlo dall'URL (?client=...), ma per retrocompatibilità 
       // manteniamo anche il fallback sul body (payload.client) o sulla struttura Telegram (update_id)
       let clientId = (this.e.parameter && this.e.parameter.client) || payload.client;
-      if (!clientId && payload.update_id) clientId = "telegram"; 
+      if (!clientId && payload.update_id) clientId = "telegram";
 
       // 2. Recuperiamo la Classe dal Registry (O(1) lookup temporale)
       const HandlerClass = this.routes[clientId];
@@ -41,10 +41,10 @@ class GatewayClient {
 
     } catch (error) {
       this.logger.log("ERROR", `Gateway Error: ${error.toString()}`);
-      
+
       const telegram = new TelegramClient();
       telegram.sendMessage(`⚠️ <b>Errore Gateway:</b>\n${error.toString()}`);
-      
+
       return HtmlService.createHtmlOutput("");
     }
   }
