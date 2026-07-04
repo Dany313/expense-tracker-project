@@ -1,8 +1,21 @@
-class TelegramClient {
+class TelegramClient extends IClientHandler {
   constructor() {
+    super();
     this.token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
     this.chatId = PropertiesService.getScriptProperties().getProperty("TELEGRAM_CHAT_ID");
     this.apiUrl = `https://api.telegram.org/bot${this.token}`;
+  }
+
+  // --- IMPLEMENTAZIONE INTERFACCIA ---
+  handleRequest(payload) {
+    if (payload.message && payload.message.text) {
+      if (payload.message.chat.id.toString() !== this.chatId) {
+         return HtmlService.createHtmlOutput(""); 
+      }
+      this.handleCommand(payload.message.text);
+    }
+    // Risposta 200 OK anti-loop
+    return HtmlService.createHtmlOutput("");
   }
 
   // Funzione per inviare un messaggio testuale
