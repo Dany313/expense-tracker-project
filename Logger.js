@@ -1,17 +1,20 @@
 class Logger {
-  constructor() {
-    this.sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(Constants.MAIN_TAB);
-    this.logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(Constants.LOG_TAB);
-  }
-
-  saveExpense(date, store, amount) {
-    if (!this.sheet) throw new Error("Foglio dati non trovato");
-    this.sheet.appendRow([date, store, amount]);
+  constructor(spreadSheetService, telegramClient = null) {
+    this.db = spreadSheetService;
+    this.telegram = telegramClient;
   }
 
   log(level, message) {
-    if (!this.logSheet) return; // Fallback silenzioso
     const timestamp = Utilities.formatDate(new Date(), "GMT+02:00", "dd/MM/yyyy HH:mm:ss");
-    this.logSheet.appendRow([timestamp, level, message]);
+    const logMessage = typeof message === 'object' ? JSON.stringify(message) : message;
+
+    if (this.db) {
+      this.db.appendLog(timestamp, level, logMessage);
+    }
+
+    if (this.telegram && (level === "SUCCESS" || level === "ERROR")) {
+      const emoji = level === "ERROR" ? "🔴" : "✅";
+      this.telegram.sendMessage(`${emoji} ${logMessage}`);
+    }
   }
 }

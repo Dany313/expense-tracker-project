@@ -77,28 +77,25 @@ global.ContentService = {
 
 const files = [
   'Constants.js',
+  'SpreadSheetService.js',
   'Logger.js',
   'GeminiClient.js',
-  'IClientHandler.js',
   'TelegramClient.js',
   'MacroDroidClient.js',
   'GatewayClient.js'
 ];
 
-// Concatenate all files into a single script to preserve scope sharing
 let combinedCode = '';
 for (const file of files) {
   combinedCode += fs.readFileSync(path.join(__dirname, '..', file), 'utf8') + '\n\n';
 }
 
-// We wrap it in a script that attaches the classes to the global object
-// so Jest test files can access them
 const scriptCode = `
   ${combinedCode}
   global.Constants = Constants;
+  global.SpreadSheetService = SpreadSheetService;
   global.Logger = Logger;
   global.GeminiClient = GeminiClient;
-  global.IClientHandler = IClientHandler;
   global.TelegramClient = TelegramClient;
   global.MacroDroidClient = MacroDroidClient;
   global.GatewayClient = GatewayClient;

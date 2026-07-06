@@ -1,6 +1,12 @@
 describe('TelegramClient', () => {
+  let dbMock;
+
+  beforeEach(() => {
+    dbMock = { getExpenses: jest.fn(), deleteLastExpense: jest.fn() };
+  });
+
   test('should handle authorized message commands', () => {
-    const client = new TelegramClient();
+    const client = new TelegramClient(dbMock);
     
     const spy = jest.spyOn(client, 'handleCommand').mockImplementation(() => {});
     
@@ -16,7 +22,7 @@ describe('TelegramClient', () => {
   });
 
   test('should reject unauthorized users', () => {
-    const client = new TelegramClient();
+    const client = new TelegramClient(dbMock);
     
     const spy = jest.spyOn(client, 'handleCommand').mockImplementation(() => {});
     

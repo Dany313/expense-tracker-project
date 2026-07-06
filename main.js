@@ -1,7 +1,10 @@
 function doPost(e) {
-  // Istanziamo il Gateway passando la request cruda
-  const gateway = new GatewayClient(e);
-  
-  // Eseguiamo il routing e restituiamo direttamente l'output HTTP corretto
-  return gateway.processRequest();
+  const db = new SpreadSheetService();
+  const telegram = new TelegramClient(db);
+  const logger = new Logger(db, telegram);
+  const gemini = new GeminiClient();
+  const macrodroid = new MacroDroidClient(gemini, logger, db);
+
+  const gateway = new GatewayClient(telegram, macrodroid, logger);
+  return gateway.processRequest(e);
 }

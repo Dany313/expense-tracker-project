@@ -1,7 +1,14 @@
 describe('GatewayClient', () => {
   let mockEvent;
+  let mockTelegram;
+  let mockMacroDroid;
+  let mockLogger;
   
   beforeEach(() => {
+    mockTelegram = { handleRequest: jest.fn(() => "TelegramResult") };
+    mockMacroDroid = { handleRequest: jest.fn(() => "MacroDroidResult") };
+    mockLogger = { log: jest.fn() };
+
     mockEvent = {
       postData: {
         contents: JSON.stringify({ client: 'macrodroid', testo: 'test' })
@@ -10,33 +17,24 @@ describe('GatewayClient', () => {
   });
 
   test('should return HtmlOutput empty string on error (invalid payload)', () => {
-    const gateway = new GatewayClient({});
-    const result = gateway.processRequest();
-    expect(result).toBe("HtmlOutput"); // mock
+    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
+    const result = gateway.processRequest({});
+    expect(result).toBe("HtmlOutput");
+    expect(mockLogger.log).toHaveBeenCalledWith("ERROR", expect.any(String));
   });
 
   test('should route to MacroDroidClient', () => {
-    const gateway = new GatewayClient(mockEvent);
-    // Spy on MacroDroidClient handleRequest
-    const spy = jest.spyOn(MacroDroidClient.prototype, 'handleRequest').mockImplementation(() => "MacroDroidResult");
-    
-    const result = gateway.processRequest();
-    expect(spy).toHaveBeenCalled();
+    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
+    const result = gateway.processRequest(mockEvent);
+    expect(mockMacroDroid.handleRequest).toHaveBeenCalled();
     expect(result).toBe("MacroDroidResult");
-    
-    spy.mockRestore();
   });
 
   test('should route to TelegramClient via update_id', () => {
     mockEvent.postData.contents = JSON.stringify({ update_id: 1234 });
-    const gateway = new GatewayClient(mockEvent);
-    
-    const spy = jest.spyOn(TelegramClient.prototype, 'handleRequest').mockImplementation(() => "TelegramResult");
-    
-    const result = gateway.processRequest();
-    expect(spy).toHaveBeenCalled();
+    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
+    const result = gateway.processRequest(mockEvent);
+    expect(mockTelegram.handleRequest).toHaveBeenCalled();
     expect(result).toBe("TelegramResult");
-    
-    spy.mockRestore();
   });
 });

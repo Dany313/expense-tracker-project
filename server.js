@@ -77,7 +77,16 @@ global.Utilities = {
 
 // Carica tutti i file .js della cartella nel contesto globale (simulando l'ambiente Google Apps Script)
 const loadGASFiles = () => {
-  const files = ['Constants.js', 'Logger.js', 'GeminiClient.js', 'TelegramClient.js', 'main.js'];
+  const files = [
+    'Constants.js', 
+    'SpreadSheetService.js', 
+    'Logger.js', 
+    'GeminiClient.js', 
+    'TelegramClient.js', 
+    'MacroDroidClient.js', 
+    'GatewayClient.js', 
+    'main.js'
+  ];
   for (const file of files) {
     if (fs.existsSync(path.join(__dirname, file))) {
       const code = fs.readFileSync(path.join(__dirname, file), 'utf8');
