@@ -1,31 +1,35 @@
 class MacroDroidClient {
-  constructor(geminiClient, logger, spreadSheetService) {
-    this.logger = logger;
+  constructor(geminiClient, spreadSheetService, logger) {
     this.gemini = geminiClient;
     this.db = spreadSheetService;
+    this.logger = logger;
   }
 
   handleRequest(payload) {
     const testoNotifica = payload.testo;
-    if (!testoNotifica) throw new Error("Payload MacroDroid senza campo 'testo'");
+    if (!testoNotifica) {
+      this.logger.debug("Ricevuto payload MacroDroid senza testo");
+      return { success: null, error: "Payload MacroDroid senza campo 'testo'" };
+    }
 
-    this.logger.log("INFO", `Notifica in ingresso da MacroDroid: ${testoNotifica}`);
+    this.logger.info(`Notifica in ingresso da MacroDroid: ${testoNotifica}`);
 
     // Elaborazione Gemini
     const extractedData = this.gemini.extractExpenseData(testoNotifica);
-    this.logger.log("INFO", `Dati estratti: ${JSON.stringify(extractedData)}`);
 
     if (extractedData.error) {
-      this.logger.log("ERROR", `⚠️ <b>Errore di elaborazione:</b>\n${extractedData.error}`);
-      return ContentService.createTextOutput(`Errore: ${extractedData.error}`).setMimeType(ContentService.MimeType.TEXT);
+      this.logger.debug(`Gemini ha restituito un errore per la notifica MacroDroid: ${extractedData.error}`);
+      return { success: null, error: `<b>Errore di elaborazione:</b>\n${extractedData.error}` };
     }
+
+    this.logger.debug(`Estrazione riuscita: Negozio=${extractedData.negozio}, Importo=${extractedData.importo}`);
 
     // Scrittura sul foglio
     const dataOggi = Utilities.formatDate(new Date(), "GMT+02:00", "dd/MM/yyyy");
     this.db.appendExpense(dataOggi, extractedData.negozio, extractedData.importo);
-    this.logger.log("INFO", "Nuova spesa aggiunta al foglio principale!");
-    this.logger.log("SUCCESS", `<b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`);
+    
+    this.logger.info("Spesa da MacroDroid registrata sul foglio principale");
 
-    return ContentService.createTextOutput(`Successo: ${extractedData.negozio}`).setMimeType(ContentService.MimeType.TEXT);
+    return { success: `<b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`, error: null };
   }
 }

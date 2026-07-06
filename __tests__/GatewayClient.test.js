@@ -1,40 +1,40 @@
 describe('GatewayClient', () => {
-  let mockEvent;
-  let mockTelegram;
-  let mockMacroDroid;
-  let mockLogger;
-  
+  let telegramMock, macrodroidMock, loggerMock;
+
   beforeEach(() => {
-    mockTelegram = { handleRequest: jest.fn(() => "TelegramResult") };
-    mockMacroDroid = { handleRequest: jest.fn(() => "MacroDroidResult") };
-    mockLogger = { log: jest.fn() };
-
-    mockEvent = {
-      postData: {
-        contents: JSON.stringify({ client: 'macrodroid', testo: 'test' })
-      }
-    };
+    telegramMock = { handleRequest: jest.fn() };
+    macrodroidMock = { handleRequest: jest.fn() };
+    loggerMock = { info: jest.fn(), error: jest.fn(), success: jest.fn() };
   });
 
-  test('should return HtmlOutput empty string on error (invalid payload)', () => {
-    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
-    const result = gateway.processRequest({});
-    expect(result).toBe("HtmlOutput");
-    expect(mockLogger.log).toHaveBeenCalledWith("ERROR", expect.any(String));
+  test('should route to Telegram and log success', () => {
+    telegramMock.handleRequest.mockReturnValue({ success: "ok telegram", error: null });
+    const gateway = new GatewayClient(telegramMock, macrodroidMock, loggerMock);
+
+    const event = { postData: { contents: JSON.stringify({ update_id: 123, message: { text: "hi" } }) } };
+    const res = gateway.processRequest(event);
+
+    expect(telegramMock.handleRequest).toHaveBeenCalled();
+    expect(loggerMock.success).toHaveBeenCalledWith("ok telegram");
+    // Returns HtmlService for Telegram
+    expect(res).toBe("HtmlOutput");
   });
 
-  test('should route to MacroDroidClient', () => {
-    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
-    const result = gateway.processRequest(mockEvent);
-    expect(mockMacroDroid.handleRequest).toHaveBeenCalled();
-    expect(result).toBe("MacroDroidResult");
+  test('should route to MacroDroid and log error', () => {
+    macrodroidMock.handleRequest.mockReturnValue({ success: null, error: "ops error" });
+    const gateway = new GatewayClient(telegramMock, macrodroidMock, loggerMock);
+
+    const event = { postData: { contents: JSON.stringify({ client: "macrodroid", testo: "hi" }) } };
+    const res = gateway.processRequest(event);
+
+    expect(macrodroidMock.handleRequest).toHaveBeenCalled();
+    expect(loggerMock.error).toHaveBeenCalledWith("ops error");
+    expect(res).toBe("TextOutput: Errore: ops error");
   });
 
-  test('should route to TelegramClient via update_id', () => {
-    mockEvent.postData.contents = JSON.stringify({ update_id: 1234 });
-    const gateway = new GatewayClient(mockTelegram, mockMacroDroid, mockLogger);
-    const result = gateway.processRequest(mockEvent);
-    expect(mockTelegram.handleRequest).toHaveBeenCalled();
-    expect(result).toBe("TelegramResult");
+  test('should handle completely broken requests', () => {
+    const gateway = new GatewayClient(telegramMock, macrodroidMock, loggerMock);
+    const res = gateway.processRequest(null);
+    expect(loggerMock.error).toHaveBeenCalledWith(expect.stringContaining("assente o malformato"));
   });
 });

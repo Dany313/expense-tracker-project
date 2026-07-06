@@ -1,14 +1,17 @@
 class GeminiClient {
 
-  constructor() {
+  constructor(logger = null) {
     this.apiKey = PropertiesService.getScriptProperties().getProperty("MODEL_API_KEY");
     this.modelName = Constants.MODEL_NAME;
+    this.logger = logger;
     
     if (!this.apiKey) throw new Error("API Key mancante");
     this.url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
   }
 
   extractExpenseData(notificationText) {
+    if (this.logger) this.logger.debug(`GeminiClient: Inizio estrazione dati per "${notificationText}"`);
+    
     const prompt = this._buildPrompt(notificationText);
     const payload = { "contents": [{"parts":[{"text": prompt}]}] };
     const options = {
@@ -18,12 +21,16 @@ class GeminiClient {
       "muteHttpExceptions": true 
     };
 
+    if (this.logger) this.logger.debug("GeminiClient: Chiamata HTTP in corso verso le API di Gemini");
     const response = UrlFetchApp.fetch(this.url, options);
     if (response.getResponseCode() !== 200) {
+       if (this.logger) this.logger.error(`GeminiClient: Errore API Gemini: ${response.getContentText()}`);
        throw new Error(`Errore API Gemini: ${response.getContentText()}`);
     }
     
-    return this._parseResponse(response.getContentText());
+    const result = this._parseResponse(response.getContentText());
+    if (this.logger) this.logger.debug(`GeminiClient: Estrazione completata: ${JSON.stringify(result)}`);
+    return result;
   }
 
   _parseResponse(responseText) {

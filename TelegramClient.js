@@ -1,11 +1,10 @@
 class TelegramClient {
-  constructor(spreadSheetService) {
-    this.token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_BOT_TOKEN") || PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
+  constructor(spreadSheetService, geminiClient, logger) {
     this.chatId = PropertiesService.getScriptProperties().getProperty("TELEGRAM_CHAT_ID");
-    this.apiUrl = `https://api.telegram.org/bot${this.token}`;
     this.db = spreadSheetService;
+    this.gemini = geminiClient;
+    this.logger = logger;
 
-    // Dizionario dei comandi: mappa il testo del comando a una funzione
     this.commands = {
       "/totale": () => this._calcolaTotaleMese(),
       "/cancella": () => this._eliminaUltimaRiga()
@@ -13,38 +12,58 @@ class TelegramClient {
   }
 
   handleRequest(payload) {
+    this.logger.debug("Inizio elaborazione payload Telegram");
     if (payload.message && payload.message.text) {
       if (this.chatId && payload.message.chat.id.toString() !== this.chatId) {
-        return HtmlService.createHtmlOutput("");
+        this.logger.error(`Tentativo di accesso non autorizzato da chat ID: ${payload.message.chat.id}`);
+        return { success: null, error: "Accesso non autorizzato" };
       }
-      this.handleCommand(payload.message.text);
+      this.logger.info(`Ricevuto messaggio da Telegram: ${payload.message.text}`);
+
+      // Se il testo non inizia con "/", assumiamo che sia un inserimento spesa libero
+      if (!payload.message.text.startsWith("/")) {
+        this.logger.debug("Ricevuto testo libero, lo interpreto come aggiunta spesa");
+        return this._aggiungiSpesa(payload.message.text);
+      }
+
+      return this.handleCommand(payload.message.text);
     }
-    // Risposta 200 OK anti-loop
-    return HtmlService.createHtmlOutput("");
-  }
-
-  sendMessage(text) {
-    const payload = {
-      chat_id: this.chatId,
-      text: text,
-      parse_mode: "HTML"
-    };
-
-    UrlFetchApp.fetch(`${this.apiUrl}/sendMessage`, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
+    this.logger.debug("Payload Telegram ignorato: nessun testo presente");
+    return { success: null, error: "Payload non valido" };
   }
 
   handleCommand(text) {
-    const commandFunc = this.commands[text];
+    const parts = text.split(" ");
+    const command = parts[0];
+    const args = text.substring(command.length).trim();
+
+    const commandFunc = this.commands[command];
 
     if (commandFunc) {
-      commandFunc();
+      this.logger.debug(`Esecuzione comando Telegram riconosciuto: ${command}`);
+      return commandFunc(args);
     } else {
-      this.sendMessage("Comando non riconosciuto. Usa /totale, /cancella o /log.");
+      this.logger.debug(`Comando Telegram non riconosciuto: ${command}`);
+      return { success: null, error: "Comando non riconosciuto. Usa /totale o /cancella, oppure scrivi direttamente la spesa per aggiungerla." };
+    }
+  }
+
+  _aggiungiSpesa(text) {
+    if (!text || text.trim() === "") {
+      return { success: null, error: "Testo della spesa non valido." };
+    }
+    try {
+      const extractedData = this.gemini.extractExpenseData(text);
+      if (extractedData.error) {
+        return { success: null, error: `<b>Errore di elaborazione:</b>\n${extractedData.error}` };
+      }
+
+      const dataOggi = Utilities.formatDate(new Date(), "GMT+02:00", "dd/MM/yyyy");
+      this.db.appendExpense(dataOggi, extractedData.negozio, extractedData.importo);
+
+      return { success: `<b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`, error: null };
+    } catch (e) {
+      return { success: null, error: `Errore imprevisto:\n${e.message}` };
     }
   }
 
@@ -53,12 +72,10 @@ class TelegramClient {
     const meseCorrente = new Date().getMonth();
     let totale = 0;
 
-    for (let i = 1; i < data.length; i++) { // Salta l'intestazione
-      let dataRiga = data[i][0]; // Assumendo che la data sia in colonna A
-      let importo = parseFloat(data[i][2].toString().replace(",", ".")); // Colonna C
+    for (let i = 1; i < data.length; i++) {
+      let dataRiga = data[i][0];
+      let importo = parseFloat(data[i][2].toString().replace(",", "."));
 
-      // Controllo grezzo sul mese: format data GG/MM/AAAA
-      // In JS new Date() prende "MM/DD/YYYY" o ISO, se la dataRiga è stringa GG/MM/AAAA dobbiamo parsare
       let isCurrentMonth = false;
       if (dataRiga instanceof Date) {
         isCurrentMonth = dataRiga.getMonth() === meseCorrente;
@@ -74,7 +91,7 @@ class TelegramClient {
         totale += importo;
       }
     }
-    this.sendMessage(`📊 <b>Totale speso questo mese:</b> ${totale.toFixed(2)} €`);
+    return { success: `📊 <b>Totale speso questo mese:</b> ${totale.toFixed(2)} €`, error: null };
   }
 
   _eliminaUltimaRiga() {
@@ -84,9 +101,9 @@ class TelegramClient {
       if (dataFormattata instanceof Date) {
         dataFormattata = Utilities.formatDate(dataFormattata, "GMT+02:00", "dd/MM/yyyy");
       }
-      this.sendMessage(`🗑️ <b>Riga eliminata!</b>\nData: ${dataFormattata}\nNegozio: ${datiCancellati[1]}\nImporto: ${datiCancellati[2]}`);
+      return { success: `🗑️ <b>Riga eliminata!</b>\nData: ${dataFormattata}\nNegozio: ${datiCancellati[1]}\nImporto: ${datiCancellati[2]}`, error: null };
     } else {
-      this.sendMessage("Il foglio è vuoto, nulla da cancellare.");
+      return { success: null, error: "Il foglio è vuoto, nulla da cancellare." };
     }
   }
 }

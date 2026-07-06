@@ -1,12 +1,12 @@
 class GatewayClient {
-  constructor(telegramClient, macroDroidClient, logger) {
+  constructor(telegramClient, macrodroidClient, logger) {
     this.telegram = telegramClient;
-    this.macrodroid = macroDroidClient;
+    this.macrodroid = macrodroidClient;
     this.logger = logger;
   }
 
   processRequest(e) {
-    this.logger.log("INFO", "NUOVA CONNESSIONE GATEWAY");
+    this.logger.info("NUOVA CONNESSIONE GATEWAY");
 
     try {
       if (!e || !e.postData || !e.postData.contents) {
@@ -18,16 +18,29 @@ class GatewayClient {
       let clientId = (e.parameter && e.parameter.client) || payload.client;
       if (!clientId && payload.update_id) clientId = "telegram";
 
+      let result;
       if (clientId === "macrodroid") {
-        return this.macrodroid.handleRequest(payload);
+        result = this.macrodroid.handleRequest(payload);
       } else if (clientId === "telegram") {
-        return this.telegram.handleRequest(payload);
+        result = this.telegram.handleRequest(payload);
       } else {
         throw new Error(`Client non riconosciuto: ${clientId}`);
       }
 
+      if (result.error) {
+        this.logger.error(result.error);
+      } else if (result.success) {
+        this.logger.success(result.success);
+      }
+
+      if (clientId === "macrodroid") {
+        return ContentService.createTextOutput(result.error ? `Errore: ${result.error}` : `Successo: ${result.success}`).setMimeType(ContentService.MimeType.TEXT);
+      } else {
+        return HtmlService.createHtmlOutput("");
+      }
+
     } catch (error) {
-      this.logger.log("ERROR", `Gateway Error: ${error.toString()}`);
+      this.logger.error(`Gateway Error: ${error.toString()}`);
       return HtmlService.createHtmlOutput("");
     }
   }
