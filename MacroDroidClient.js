@@ -13,18 +13,18 @@ class MacroDroidClient {
 
     // Elaborazione Gemini
     const extractedData = this.gemini.extractExpenseData(testoNotifica);
-    this.logger.log("SUCCESS", `Dati estratti: ${JSON.stringify(extractedData)}`);
+    this.logger.log("INFO", `Dati estratti: ${JSON.stringify(extractedData)}`);
+
+    if (extractedData.error) {
+      this.logger.log("ERROR", `⚠️ <b>Errore di elaborazione:</b>\n${extractedData.error}`);
+      return ContentService.createTextOutput(`Errore: ${extractedData.error}`).setMimeType(ContentService.MimeType.TEXT);
+    }
 
     // Scrittura sul foglio
     const dataOggi = Utilities.formatDate(new Date(), "GMT+02:00", "dd/MM/yyyy");
     this.db.appendExpense(dataOggi, extractedData.negozio, extractedData.importo);
     this.logger.log("INFO", "Nuova spesa aggiunta al foglio principale!");
-    this.logger.log("SUCCESS", `✅ <b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`);
-
-    // Notifica di conferma
-    /*if (this.telegram) {
-      this.telegram.sendMessage(`✅ <b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`);
-    }*/
+    this.logger.log("SUCCESS", `<b>Nuova Spesa Salvata!</b>\nNegozio: ${extractedData.negozio}\nImporto: ${extractedData.importo} €`);
 
     return ContentService.createTextOutput(`Successo: ${extractedData.negozio}`).setMimeType(ContentService.MimeType.TEXT);
   }

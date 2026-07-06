@@ -49,7 +49,7 @@ global.UrlFetchApp = {
     getContentText: jest.fn(() => JSON.stringify({
       candidates: [{
         content: {
-          parts: [{ text: '```json\n{"importo": "15,50", "negozio": "CONAD"}\n```' }]
+          parts: [{ text: '```json\n{"importo": "15,50", "negozio": "CONAD", "error": null}\n```' }]
         }
       }]
     }))

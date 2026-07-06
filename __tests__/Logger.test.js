@@ -14,13 +14,13 @@ describe('Logger', () => {
     expect(telegramMock.sendMessage).not.toHaveBeenCalled(); // DEBUG non inoltra a telegram
   });
 
-  test('should forward INFO and ERROR logs to Telegram', () => {
+  test('should forward SUCCESS and ERROR logs to Telegram', () => {
     const logger = new Logger(dbMock, telegramMock);
     
-    logger.log('INFO', 'Test Info');
-    expect(telegramMock.sendMessage).toHaveBeenCalledWith(expect.stringContaining('[INFO]'));
+    logger.log('SUCCESS', 'Test Success');
+    expect(telegramMock.sendMessage).toHaveBeenCalledWith(expect.stringContaining('✅'));
 
     logger.log('ERROR', 'Test Error');
-    expect(telegramMock.sendMessage).toHaveBeenCalledWith(expect.stringContaining('[ERROR]'));
+    expect(telegramMock.sendMessage).toHaveBeenCalledWith(expect.stringContaining('🔴'));
   });
 });

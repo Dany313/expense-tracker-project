@@ -3,7 +3,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient();
     
     const result = client.extractExpenseData("testo notifica");
-    expect(result).toEqual({ importo: "15,50", negozio: "CONAD" });
+    expect(result).toEqual({ importo: "15,50", negozio: "CONAD", error: null });
   });
 
   test('should throw if API Key is missing', () => {
