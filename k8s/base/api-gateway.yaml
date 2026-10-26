@@ -24,6 +24,9 @@ spec:
           ports:
             - containerPort: 8085
               name: http
+          env:
+            - name: SPRING_SERVLET_MULTIPART_ENABLED
+              value: "false"
           envFrom:
             - configMapRef:
                 name: expense-tracker-config
