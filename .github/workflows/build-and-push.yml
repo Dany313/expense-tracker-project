@@ -4,14 +4,18 @@ on:
   push:
     branches:
       - main
-      - refactor/spring-boot-microservice
     paths-ignore:
       - 'README.md'
       - 'docs/**'
       - 'k8s/**'
       - 'scripts/**'
+      - 'frontend/**'
       - '.gitignore'
   workflow_dispatch:
+
+concurrency:
+  group: ghcr-build-and-push
+  cancel-in-progress: true
 
 permissions:
   contents: read
