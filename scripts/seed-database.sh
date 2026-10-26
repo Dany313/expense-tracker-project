@@ -95,6 +95,9 @@ if command -v psql &> /dev/null; then
 elif command -v docker &> /dev/null && docker ps -q -f name=expense-tracker-postgres &> /dev/null && [[ "$TARGET_URL" == *"localhost:5432"* ]]; then
   echo "🚀 Esecuzione seed tramite container Docker expense-tracker-postgres..."
   docker exec -i expense-tracker-postgres psql -U expense_user -d expense_tracker < "$SQL_FILE"
+elif command -v docker &> /dev/null; then
+  echo "🚀 Esecuzione seed tramite container Docker temporaneo postgres:18-alpine..."
+  docker run --rm -i postgres:18-alpine psql "$TARGET_URL" < "$SQL_FILE"
 else
   echo "❌ Client 'psql' non trovato sul sistema locale."
   echo "Puoi eseguire il seed manualmente con uno dei seguenti metodi:"

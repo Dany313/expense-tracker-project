@@ -103,7 +103,11 @@ INSERT INTO expenses (
     (gen_random_uuid(), '2026-10-10', 'LIDL', 6.28, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
     (gen_random_uuid(), '2026-10-16', 'EUROSPIN', 22.22, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
     (gen_random_uuid(), '2026-10-16', 'CONAD', 5.42, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
-    (gen_random_uuid(), '2026-10-18', 'DM', 25.40, 'PERSONAL_CARE', 'Igiene casa e persona', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)
+    (gen_random_uuid(), '2026-10-18', 'DM', 25.40, 'PERSONAL_CARE', 'Igiene casa e persona', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
+    (gen_random_uuid(), '2026-10-24', 'AMAZON', 19.32, 'SHOPPING', 'E-commerce', 'Importato da Excel (tab scontrini)', FALSE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
+    (gen_random_uuid(), '2026-10-24', 'EUROSPIN', 58.67, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
+    (gen_random_uuid(), '2026-10-24', 'CONAD', 13.90, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0),
+    (gen_random_uuid(), '2026-10-24', 'LIDL', 31.94, 'GROCERIES', 'Supermercato', 'Importato da Excel (tab scontrini)', FALSE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
