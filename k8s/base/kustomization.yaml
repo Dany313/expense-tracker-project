@@ -9,3 +9,4 @@ resources:
   - expense-service.yaml
   - receipt-ocr-service.yaml
   - expense-agent-service.yaml
+  - ingress.yaml
