@@ -30,21 +30,21 @@ spec:
           resources:
             requests:
               memory: "256Mi"
-              cpu: "100m"
+              cpu: "50m"
             limits:
               memory: "512Mi"
-              cpu: "500m"
+              cpu: "1000m"
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8085
-            initialDelaySeconds: 25
-            periodSeconds: 10
+            initialDelaySeconds: 120
+            periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8085
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 10
 ---
 apiVersion: v1

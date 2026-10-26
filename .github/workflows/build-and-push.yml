@@ -8,6 +8,8 @@ on:
     paths-ignore:
       - 'README.md'
       - 'docs/**'
+      - 'k8s/**'
+      - 'scripts/**'
       - '.gitignore'
   workflow_dispatch:
 
