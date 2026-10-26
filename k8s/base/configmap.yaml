@@ -26,4 +26,4 @@ data:
   RABBITMQ_VIRTUAL_HOST: "sydxgzjb"
 
   # Modello Gemini
-  GEMINI_MODEL: "gemini-3.1-flash-lite"
+  GEMINI_MODEL: "gemini-3.5-flash-lite"
