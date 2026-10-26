@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Dany313/expense-tracker-project.git
-    targetRevision: refactor/spring-boot-microservice
+    targetRevision: main
     path: k8s/base
   destination:
     server: https://kubernetes.default.svc
