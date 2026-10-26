@@ -15,6 +15,7 @@ Questo documento raccoglie in ordine cronologico **tutte le operazioni effettuat
 8. [Pipeline CI/CD Multi-Architettura e GitHub Container Registry](#8-pipeline-cicd-multi-architettura-e-github-container-registry)
 9. [Attivazione dell'Applicazione ArgoCD e Ottimizzazione per 1 OCPU](#9-attivazione-dellapplicazione-argocd-e-ottimizzazione-per-1-ocpu)
 10. [Comandi Utili di Ispezione e Manutenzione Quotidiani](#10-comandi-utili-di-ispezione-e-manutenzione-quotidiani)
+11. [Esposizione HTTPS Gratuita (`84-8-253-31.sslip.io` + Traefik + Let's Encrypt)](#11-esposizione-https-gratuita-84-8-253-31sslipio--traefik--lets-encrypt)
 
 ---
 
@@ -222,3 +223,47 @@ Se vuoi vedere la dashboard grafica di ArgoCD sul tuo Mac senza esporla su inter
 ssh -i ~/.ssh/oracle_expense_vm.key -L 8443:localhost:8443 ubuntu@84.8.253.31 "sudo k3s kubectl port-forward svc/argocd-server -n argocd 8443:443"
 ```
 Poi apri nel browser **[https://localhost:8443](https://localhost:8443)** (utente: `admin`, password: quella ottenuta col comando sopra).
+
+---
+
+## 11. Esposizione HTTPS Gratuita (`84-8-253-31.sslip.io` + Traefik + Let's Encrypt)
+
+Per esporre gratuitamente in HTTPS l'`api-gateway` senza possedere ancora un dominio personalizzato:
+
+### 11.1 Apertura porte 80 e 443 nel firewall interno Linux (`iptables`) della VM Oracle
+Le immagini Ubuntu di Oracle Cloud includono di fabbrica una regola `REJECT` finale in `/etc/iptables/rules.v4` che blocca tutto il traffico in ingresso tranne la porta `22` (SSH).
+```bash
+sudo iptables -I INPUT 10 -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 11 -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+sudo sed -i "/--dport 22 -j ACCEPT/a -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT\n-A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT" /etc/iptables/rules.v4
+```
+* **Cosa fa**:
+  * Inserisce a caldo (`-I INPUT`) le regole `ACCEPT` per le porte TCP `80` (HTTP) e `443` (HTTPS) prima della regola `REJECT` senza interrompere le catene di rete di Kubernetes (`KUBE-ROUTER-*`).
+  * Aggiorna `/etc/iptables/rules.v4` in modo che le porte `80` e `443` restino aperte anche dopo un riavvio della VM.
+
+### 11.2 Configurazione di Let's Encrypt su Traefik (`HelmChartConfig`)
+```bash
+cat <<EOF | sudo tee /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    additionalArguments:
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+    persistence:
+      enabled: true
+      path: /data
+      size: 128Mi
+EOF
+```
+* **Cosa fa**:
+  * Istruisce l'Ingress Controller **Traefik** (integrato in k3s) a richiedere e rinnovare automaticamente un certificato TLS valido gratuito da **Let's Encrypt** salvandolo in un volume persistente da 128 MB (`/data/acme.json`).
+
+### 11.3 Creazione della risorsa Kubernetes `Ingress` via GitOps
+Nel repository è stato aggiunto il file [`k8s/base/ingress.yaml`](file:///Users/daniele/Dev/expense-tracker-project/k8s/base/ingress.yaml), sincronizzato automaticamente da ArgoCD, che instrada il dominio gratuito `84-8-253-31.sslip.io` verso il servizio interno `api-gateway:8085`.
