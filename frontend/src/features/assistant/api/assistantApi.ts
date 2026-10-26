@@ -1,9 +1,20 @@
 import { httpRequest } from '../../../core/api/httpClient';
 
+export interface OcrExtractedExpense {
+  expenseDate: string;
+  storeName: string;
+  amount: number;
+  category: string;
+  subcategory?: string | null;
+  description?: string | null;
+  recurring: boolean;
+}
+
 export interface OcrJobResponse {
   jobId: string;
   status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED_DLQ';
   autoSaveExpense: boolean;
+  extractedExpense?: OcrExtractedExpense | null;
   message: string;
 }
 
@@ -25,6 +36,10 @@ export const assistantApi = {
         body: formData,
       }
     );
+  },
+
+  async getOcrJobStatus(jobId: string): Promise<OcrJobResponse> {
+    return httpRequest<OcrJobResponse>(`/api/v1/ocr/receipts/jobs/${encodeURIComponent(jobId)}`);
   },
 
   async sendAgentTextCommand(text: string): Promise<AgentChatResponse> {

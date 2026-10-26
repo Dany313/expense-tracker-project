@@ -48,13 +48,43 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
     setSuccessMsg(null);
     try {
       const job = await assistantApi.enqueueReceiptFile(selectedFile, true);
-      setSuccessMsg(
-        `Scontrino accodato su RabbitMQ (Job ID: ${job.jobId}). Verrà analizzato da Gemini Vision e salvato automaticamente.`
-      );
       setSelectedFile(null);
-      setTimeout(() => {
-        void onRefreshExpenses();
-      }, 2500);
+      setSuccessMsg(
+        `⏳ Scontrino accodato su RabbitMQ (Job ID: ${job.jobId}). Analisi Gemini Vision in corso...`
+      );
+
+      // Polling dello stato del job OCR fino al completamento o fallimento
+      for (let attempt = 0; attempt < 25; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        try {
+          const statusRes = await assistantApi.getOcrJobStatus(job.jobId);
+          if (statusRes.status === 'COMPLETED') {
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            await onRefreshExpenses();
+            const ext = statusRes.extractedExpense;
+            if (ext) {
+              setSuccessMsg(
+                `✅ Scontrino salvato! Negozio: ${ext.storeName} — Importo: ${Number(ext.amount).toFixed(2)} € — Data scontrino: ${ext.expenseDate}`
+              );
+            } else {
+              setSuccessMsg(`✅ Scontrino elaborato e salvato con successo!`);
+            }
+            return;
+          }
+          if (statusRes.status === 'FAILED_DLQ') {
+            setSuccessMsg(null);
+            setErrorMsg(`Errore OCR Scontrino: ${statusRes.message}`);
+            return;
+          }
+        } catch {
+          // Continua il polling in caso di errore di rete transitorio
+        }
+      }
+
+      await onRefreshExpenses();
+      setSuccessMsg(
+        `Scontrino in coda su RabbitMQ (Job ID: ${job.jobId}). L'elaborazione sta proseguendo in background.`
+      );
     } catch (err) {
       setErrorMsg(
         err instanceof ApiError

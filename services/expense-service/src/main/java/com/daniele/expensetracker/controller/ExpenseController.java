@@ -78,7 +78,7 @@ public class ExpenseController {
             @RequestParam(required = false) Boolean recurring,
             @Parameter(description = "Filtra per spesa condivisa al 50%")
             @RequestParam(required = false) Boolean shared,
-            @PageableDefault(size = 20, sort = "expenseDate", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 20, sort = {"expenseDate", "createdAt"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
         ExpenseFilterCriteria criteria = new ExpenseFilterCriteria(
                 startDate,

@@ -36,7 +36,8 @@ export const expensesApi = {
     }
     query.set('page', String(params.page ?? 0));
     query.set('size', String(params.size ?? 12));
-    query.set('sort', params.sort ?? 'expenseDate,desc');
+    query.append('sort', params.sort ?? 'expenseDate,desc');
+    query.append('sort', 'createdAt,desc');
 
     return httpRequest<PagedExpenseResponse>(`${API_BASE}?${query.toString()}`);
   },
