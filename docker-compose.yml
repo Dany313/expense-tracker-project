@@ -1,0 +1,178 @@
+services:
+  # -------------------------------------------------------------------
+  # 1. Database Relazionale (PostgreSQL 17)
+  # -------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: expense-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-expense_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-expense_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-expense_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - expense-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-expense_user} -d $${POSTGRES_DB:-expense_tracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 2. Message Broker & DLQ (RabbitMQ 4 con Management Web UI)
+  # -------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: expense-tracker-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-expense_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-expense_pass}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - expense-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------------------------------------------
+  # 3. Core Expense Backend & MCP Server (Porta 8080)
+  # -------------------------------------------------------------------
+  expense-service:
+    build:
+      context: .
+      dockerfile: services/expense-service/Dockerfile
+    container_name: expense-tracker-expense-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-expense_user}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-expense_pass}
+    ports:
+      - "8080:8080"
+    networks:
+      - expense-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------
+  # 4. Receipt OCR & Vision Service (Porta 8081)
+  # -------------------------------------------------------------------
+  receipt-ocr-service:
+    build:
+      context: .
+      dockerfile: services/receipt-ocr-service/Dockerfile
+    container_name: expense-tracker-receipt-ocr-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-expense_user}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-expense_pass}
+    ports:
+      - "8081:8081"
+    networks:
+      - expense-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # -------------------------------------------------------------------
+  # 5. AI Assistant & Telegram Webhook Service (Porta 8082)
+  # -------------------------------------------------------------------
+  expense-agent-service:
+    build:
+      context: .
+      dockerfile: services/expense-agent-service/Dockerfile
+    container_name: expense-tracker-expense-agent-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      EXPENSE_SERVICE_URL: http://expense-service:8080
+      RECEIPT_OCR_SERVICE_URL: http://receipt-ocr-service:8081
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USER:-expense_user}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-expense_pass}
+    ports:
+      - "8082:8082"
+    networks:
+      - expense-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      expense-service:
+        condition: service_started
+
+  # -------------------------------------------------------------------
+  # 6. Edge API Gateway & Auth Guard (Porta 8085)
+  # -------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: expense-tracker-api-gateway
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      EXPENSE_SERVICE_URL: http://expense-service:8080
+      RECEIPT_OCR_SERVICE_URL: http://receipt-ocr-service:8081
+      EXPENSE_AGENT_SERVICE_URL: http://expense-agent-service:8082
+    ports:
+      - "8085:8085"
+    networks:
+      - expense-network
+    depends_on:
+      expense-service:
+        condition: service_started
+      receipt-ocr-service:
+        condition: service_started
+      expense-agent-service:
+        condition: service_started
+
+  # -------------------------------------------------------------------
+  # 7. Frontend Web Application (React 19 + Nginx Reverse Proxy)
+  # -------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: expense-tracker-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - expense-network
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  expense-network:
+    driver: bridge

@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:file:.env[.properties],optional:file:../../.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${GATEWAY_PORT:8085}
+  shutdown: graceful
+
+gateway:
+  routes:
+    expense-service-url: ${EXPENSE_SERVICE_URL:http://localhost:8080}
+    receipt-ocr-service-url: ${RECEIPT_OCR_SERVICE_URL:http://localhost:8081}
+    expense-agent-service-url: ${EXPENSE_AGENT_SERVICE_URL:http://localhost:8082}
+  security:
+    auth-enabled: ${GATEWAY_AUTH_ENABLED:true}
+    jwt-secret: ${GATEWAY_JWT_SECRET:expense-tracker-gateway-jwt-signing-secret-key-2026}
+    token-ttl-hours: ${GATEWAY_TOKEN_TTL_HOURS:720}
+    allowed-email: ${ALLOWED_USER_EMAIL:daniele@example.com}
+    google-client-id: ${GOOGLE_OIDC_CLIENT_ID:}
+    access-passphrase: ${GATEWAY_ACCESS_PASSPHRASE:admin123}
+    m2m-secret: ${INTERNAL_M2M_SECRET:expense-tracker-internal-m2m-secret-change-me}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true

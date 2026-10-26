@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: expense-tracker
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: expense-tracker-config
+  namespace: expense-tracker
+data:
+  # Networking interno k3s
+  EXPENSE_SERVICE_URL: "http://expense-service:8080"
+  RECEIPT_OCR_SERVICE_URL: "http://receipt-ocr-service:8081"
+  EXPENSE_AGENT_SERVICE_URL: "http://expense-agent-service:8082"
+
+  # Neon PostgreSQL
+  POSTGRES_HOST: "ep-restless-dream-ba5r3pnl-pooler.c-8.eu-central-1.aws.neon.tech"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "neondb"
+
+  # CloudAMQP RabbitMQ
+  RABBITMQ_HOST: "swallow.lmq.cloudamqp.com"
+  RABBITMQ_PORT: "5671"
+  RABBITMQ_SSL_ENABLED: "true"
+  RABBITMQ_VIRTUAL_HOST: "sydxgzjb"
+
+  # Modello Gemini
+  GEMINI_MODEL: "gemini-3.1-flash-lite"

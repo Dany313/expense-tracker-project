@@ -1,0 +1,59 @@
+@layer base, theme, layout, components, utilities;
+
+@import './tokens.css';
+@import './layout.css';
+@import './components.css';
+
+@layer base {
+  :where(
+      html,
+      body,
+      div,
+      header,
+      main,
+      aside,
+      section,
+      article,
+      nav,
+      form,
+      dialog,
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      li,
+      input,
+      select,
+      textarea,
+      button,
+      table,
+      th,
+      td
+    ) {
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    color: var(--text-muted);
+  }
+
+  .text-end {
+    text-align: end;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}

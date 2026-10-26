@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: receipt-ocr-service
+  namespace: expense-tracker
+  labels:
+    app: receipt-ocr-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: receipt-ocr-service
+  template:
+    metadata:
+      labels:
+        app: receipt-ocr-service
+    spec:
+      containers:
+        - name: receipt-ocr-service
+          image: ghcr.io/dany313/expense-receipt-ocr-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+              name: http
+          envFrom:
+            - configMapRef:
+                name: expense-tracker-config
+            - secretRef:
+                name: expense-tracker-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 25
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: receipt-ocr-service
+  namespace: expense-tracker
+  labels:
+    app: receipt-ocr-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      name: http
+  selector:
+    app: receipt-ocr-service

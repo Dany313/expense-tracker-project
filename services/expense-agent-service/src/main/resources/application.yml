@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: expense-agent-service
+  config:
+    import: optional:file:.env[.properties],optional:file:../../.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mvc:
+    problemdetails:
+      enabled: true
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    username: ${RABBITMQ_USER:${RABBITMQ_USERNAME:expense_user}}
+    password: ${RABBITMQ_PASSWORD:expense_pass}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        concurrency: 1
+        max-concurrency: 2
+        prefetch: 1
+        retry:
+          enabled: true
+          max-attempts: 4
+          initial-interval: 2000ms
+          multiplier: 2.5
+          max-interval: 30000ms
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:${MODEL_API_KEY:missing-gemini-api-key}}
+        chat:
+          options:
+            model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
+            temperature: 0.2
+    mcp:
+      client:
+        enabled: true
+        name: expense-agent-mcp-client
+        version: 1.0.0
+        type: SYNC
+        initialized: false
+        request-timeout: 30s
+        toolcallback:
+          enabled: true
+        sse:
+          connections:
+            expense-service:
+              url: ${EXPENSE_SERVICE_URL:http://localhost:8080}
+              sse-endpoint: /sse
+
+server:
+  port: ${EXPENSE_AGENT_PORT:8082}
+  shutdown: graceful
+
+security:
+  m2m:
+    enabled: ${M2M_AUTH_ENABLED:false}
+    secret: ${INTERNAL_M2M_SECRET:expense-tracker-internal-m2m-secret-change-me}
+
+receipt:
+  ocr:
+    service:
+      url: ${RECEIPT_OCR_SERVICE_URL:http://localhost:8081}
+
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN:}
+    webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
+    allowed-user-ids: ${TELEGRAM_ALLOWED_USER_IDS:}
+    async-queue-mode: ${TELEGRAM_ASYNC_QUEUE_MODE:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

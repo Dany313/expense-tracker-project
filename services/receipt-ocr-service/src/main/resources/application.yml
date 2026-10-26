@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: receipt-ocr-service
+  config:
+    import: optional:file:.env[.properties],optional:file:../../.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+  mvc:
+    problemdetails:
+      enabled: true
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    username: ${RABBITMQ_USER:expense_user}
+    password: ${RABBITMQ_PASSWORD:expense_pass}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        concurrency: 1
+        max-concurrency: 2
+        prefetch: 1
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 4
+          initial-interval: 2000ms
+          multiplier: 2.5
+          max-interval: 30000ms
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:${MODEL_API_KEY:missing-gemini-api-key}}
+        chat:
+          options:
+            model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
+            temperature: 0.1
+    mcp:
+      server:
+        enabled: true
+        name: receipt-ocr-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: >
+          Server MCP per l'estrazione OCR da foto di scontrini tramite Vision AI.
+          Usa i tool esposti per estrarre i dati della spesa (data, negozio, importo totale,
+          categoria, sottocategoria opzionale, metodo di pagamento e riferimento scontrino)
+          direttamente nel formato richiesto da expense-service.
+
+server:
+  port: ${RECEIPT_OCR_PORT:8081}
+  shutdown: graceful
+
+security:
+  m2m:
+    enabled: ${M2M_AUTH_ENABLED:false}
+    secret: ${INTERNAL_M2M_SECRET:expense-tracker-internal-m2m-secret-change-me}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

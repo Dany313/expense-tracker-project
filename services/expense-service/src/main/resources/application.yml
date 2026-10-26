@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: expense-tracker-service
+  config:
+    import: optional:file:.env[.properties],optional:file:../../.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:expense_tracker}}
+    username: ${POSTGRES_USER:expense_user}
+    password: ${POSTGRES_PASSWORD:expense_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    username: ${RABBITMQ_USER:expense_user}
+    password: ${RABBITMQ_PASSWORD:expense_pass}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 10
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 4
+          initial-interval: 2000ms
+          multiplier: 2.0
+          max-interval: 15000ms
+  mvc:
+    problemdetails:
+      enabled: true
+  ai:
+    mcp:
+      server:
+        enabled: true
+        name: expense-tracker-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: >
+          Server MCP per la gestione delle spese personali (Expense Tracker).
+          Usa i tool esposti per inserire nuove spese (con data, negozio, importo, categoria,
+          sottocategoria opzionale, metodo di pagamento e note), cercare o filtrare spese,
+          aggiornarle, eliminarle e ottenere statistiche/riepiloghi per categoria o periodo.
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+security:
+  m2m:
+    enabled: ${M2M_AUTH_ENABLED:false}
+    secret: ${INTERNAL_M2M_SECRET:expense-tracker-internal-m2m-secret-change-me}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
