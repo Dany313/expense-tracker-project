@@ -29,6 +29,9 @@ public class BackendProxyService {
             "transfer-encoding",
             "keep-alive",
             "upgrade",
+            "origin",
+            "access-control-request-method",
+            "access-control-request-headers",
             "x-internal-m2m-token"
     );
 
