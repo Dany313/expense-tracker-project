@@ -8,6 +8,7 @@ export const DEFAULT_CATEGORIES: CategoryMetadata[] = [
   { code: 'MANUTENZIONE_AUTO_ORDINARIA', displayName: 'Manutenzione auto ordinaria' },
   { code: 'MANUTENZIONE_AUTO_STRAORDINARIA', displayName: 'Manutenzione auto straordinaria' },
   { code: 'SVAGO', displayName: 'Svago' },
+  { code: 'USCITE_FUORI', displayName: 'Uscite fuori' },
   { code: 'SALUTE_E_SPORT', displayName: 'Salute e sport' },
   { code: 'ABBIGLIAMENTO', displayName: 'Abbigliamento' },
   { code: 'VIAGGI', displayName: 'Viaggi' },

@@ -7,6 +7,7 @@ export type ExpenseCategoryCode =
   | 'SPESA_ALIMENTARE_E_CASA'
   | 'VIAGGI'
   | 'SVAGO'
+  | 'USCITE_FUORI'
   | 'SALUTE_E_SPORT'
   | 'ABBIGLIAMENTO';
 

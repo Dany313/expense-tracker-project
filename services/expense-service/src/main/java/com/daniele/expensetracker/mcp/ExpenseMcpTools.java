@@ -45,7 +45,7 @@ public class ExpenseMcpTools {
             String storeName,
             @ToolParam(description = "Importo numerico positivo della spesa (es. 25.50)")
             BigDecimal amount,
-            @ToolParam(description = "Categoria principale della spesa: AFFITTO, BOLLETTE, CARBURANTE_E_TRASPORTI, MANUTENZIONE_AUTO_ORDINARIA, MANUTENZIONE_AUTO_STRAORDINARIA, SPESA_ALIMENTARE_E_CASA, VIAGGI, SVAGO, SALUTE_E_SPORT, ABBIGLIAMENTO (accetta anche termini in italiano o sinonimi come SPESA, ALIMENTARI, BENZINA, TAGLIANDO, RISTORANTE, PALESTRA, VESTITI, ALTRO)")
+            @ToolParam(description = "Categoria principale della spesa: AFFITTO, BOLLETTE, CARBURANTE_E_TRASPORTI, MANUTENZIONE_AUTO_ORDINARIA, MANUTENZIONE_AUTO_STRAORDINARIA, SPESA_ALIMENTARE_E_CASA, VIAGGI, SVAGO, USCITE_FUORI, SALUTE_E_SPORT, ABBIGLIAMENTO (accetta anche termini in italiano o sinonimi come SPESA, ALIMENTARI, BENZINA, TAGLIANDO, RISTORANTE, USCITE, PALESTRA, VESTITI, ALTRO)")
             String category,
             @ToolParam(description = "Sottocategoria opzionale (es. 'Spesa settimanale', 'Carburante', 'Farmaci', 'Abbonamento streaming')", required = false)
             String subcategory,

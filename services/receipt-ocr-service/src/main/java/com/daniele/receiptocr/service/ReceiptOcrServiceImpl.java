@@ -33,7 +33,7 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
     private static final Set<String> VALID_CATEGORIES = Set.of(
             "AFFITTO", "BOLLETTE", "CARBURANTE_E_TRASPORTI", "MANUTENZIONE_AUTO_ORDINARIA",
             "MANUTENZIONE_AUTO_STRAORDINARIA", "SPESA_ALIMENTARE_E_CASA", "VIAGGI", "SVAGO",
-            "SALUTE_E_SPORT", "ABBIGLIAMENTO"
+            "USCITE_FUORI", "SALUTE_E_SPORT", "ABBIGLIAMENTO"
     );
 
     private final ReceiptVisionExtractor visionExtractor;
