@@ -1,7 +1,6 @@
 package com.daniele.expensetracker.service;
 
 import com.daniele.expensetracker.domain.Expense;
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import com.daniele.expensetracker.dto.CategoryMetadataResponse;
 import com.daniele.expensetracker.dto.ExpenseCreateRequest;
 import com.daniele.expensetracker.dto.ExpenseFilterCriteria;
@@ -15,12 +14,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,10 +33,16 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final StoreNameNormalizer storeNameNormalizer;
+    private final CategoryService categoryService;
 
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository, StoreNameNormalizer storeNameNormalizer) {
+    public ExpenseServiceImpl(
+            ExpenseRepository expenseRepository,
+            StoreNameNormalizer storeNameNormalizer,
+            CategoryService categoryService
+    ) {
         this.expenseRepository = expenseRepository;
         this.storeNameNormalizer = storeNameNormalizer;
+        this.categoryService = categoryService;
     }
 
     @Override
@@ -48,35 +51,33 @@ public class ExpenseServiceImpl implements ExpenseService {
         Expense expense = new Expense();
         applyCreateRequest(expense, request);
         Expense saved = expenseRepository.save(expense);
-        return ExpenseResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
     @Override
     public ExpenseResponse getExpenseById(UUID id) {
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.forExpenseId(id));
-        return ExpenseResponse.fromEntity(expense);
+        return toResponse(expense);
     }
 
     @Override
     public Page<ExpenseResponse> searchExpenses(ExpenseFilterCriteria criteria, Pageable pageable) {
         validateDateAndAmountRange(criteria);
-        return expenseRepository.findAll(ExpenseSpecifications.withCriteria(criteria), pageable)
-                .map(ExpenseResponse::fromEntity);
+        Pageable resolvedPageable = pageable != null ? pageable : PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "expenseDate"));
+        return expenseRepository.findAll(ExpenseSpecifications.withCriteria(criteria), resolvedPageable)
+                .map(this::toResponse);
     }
 
     @Override
     public List<ExpenseResponse> listExpenses(ExpenseFilterCriteria criteria, int limit) {
         validateDateAndAmountRange(criteria);
-        int effectiveLimit = Math.clamp(limit <= 0 ? 50 : limit, 1, MAX_LIST_LIMIT);
-        Pageable pageable = PageRequest.of(
-                0,
-                effectiveLimit,
-                Sort.by(Sort.Order.desc("expenseDate"), Sort.Order.desc("createdAt"))
-        );
+        int boundedLimit = Math.clamp(limit, 1, MAX_LIST_LIMIT);
+        Pageable pageable = PageRequest.of(0, boundedLimit, Sort.by(Sort.Direction.DESC, "expenseDate", "createdAt"));
         return expenseRepository.findAll(ExpenseSpecifications.withCriteria(criteria), pageable)
+                .getContent()
                 .stream()
-                .map(ExpenseResponse::fromEntity)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -87,7 +88,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .orElseThrow(() -> ResourceNotFoundException.forExpenseId(id));
         applyCreateRequest(expense, request);
         Expense saved = expenseRepository.save(expense);
-        return ExpenseResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
     @Override
@@ -105,8 +106,8 @@ public class ExpenseServiceImpl implements ExpenseService {
         if (request.amount() != null) {
             expense.setAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
         }
-        if (request.category() != null) {
-            expense.setCategory(request.category());
+        if (request.category() != null && !request.category().isBlank()) {
+            expense.setCategory(categoryService.resolveCategoryCode(request.category()));
         }
         if (request.subcategory() != null) {
             expense.setSubcategory(normalizeNullableText(request.subcategory()));
@@ -122,7 +123,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
 
         Expense saved = expenseRepository.save(expense);
-        return ExpenseResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
     @Override
@@ -141,78 +142,63 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public ExpenseSummaryResponse getSummary(LocalDate startDate, LocalDate endDate, boolean splitShared) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("La data di inizio (startDate) non può essere successiva alla data di fine (endDate)");
+            throw new IllegalArgumentException("La data di inizio non può essere successiva alla data di fine");
         }
 
         ExpenseFilterCriteria criteria = new ExpenseFilterCriteria(
-                startDate, endDate, null, null, null, null, null, null, null
+                startDate,
+                endDate,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
-        List<Expense> expenses = expenseRepository.findAll(ExpenseSpecifications.withCriteria(criteria));
 
-        long totalCount = expenses.size();
-        BigDecimal totalAmount = expenses.stream()
-                .map(e -> calculateEffectiveAmount(e, splitShared))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+        List<Expense> expenses = expenseRepository.findAll(
+                ExpenseSpecifications.withCriteria(criteria),
+                Sort.by(Sort.Direction.ASC, "expenseDate")
+        );
+
+        int totalCount = expenses.size();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        Map<String, BigDecimal> amountByCategory = new LinkedHashMap<>();
+        Map<String, BigDecimal> amountByStore = new LinkedHashMap<>();
+
+        YearMonth currentYearMonth = YearMonth.now();
+        BigDecimal currentMonthTotalAmount = BigDecimal.ZERO;
+
+        for (Expense expense : expenses) {
+            BigDecimal effectiveAmount = calculateEffectiveAmount(expense, splitShared);
+            totalAmount = totalAmount.add(effectiveAmount);
+
+            String categoryKey = expense.getCategory();
+            amountByCategory.merge(categoryKey, effectiveAmount, BigDecimal::add);
+
+            String storeKey = expense.getStoreName();
+            amountByStore.merge(storeKey, effectiveAmount, BigDecimal::add);
+
+            YearMonth expenseYearMonth = YearMonth.from(expense.getExpenseDate());
+            if (expenseYearMonth.equals(currentYearMonth)) {
+                currentMonthTotalAmount = currentMonthTotalAmount.add(effectiveAmount);
+            }
+        }
 
         BigDecimal averageAmount = totalCount > 0
                 ? totalAmount.divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+                : BigDecimal.ZERO;
 
-        long distinctMonths = expenses.stream()
-                .map(e -> YearMonth.from(e.getExpenseDate()))
-                .distinct()
-                .count();
-
-        BigDecimal averageMonthlyAmount = distinctMonths > 0
-                ? totalAmount.divide(BigDecimal.valueOf(distinctMonths), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-
-        YearMonth currentYearMonth = YearMonth.now();
-        List<Expense> currentMonthExpenses = (startDate == null && endDate == null)
-                ? expenses.stream()
-                        .filter(e -> YearMonth.from(e.getExpenseDate()).equals(currentYearMonth))
-                        .toList()
-                : expenseRepository.findAll(ExpenseSpecifications.withCriteria(new ExpenseFilterCriteria(
-                        currentYearMonth.atDay(1),
-                        currentYearMonth.atEndOfMonth(),
-                        null, null, null, null, null, null, null
-                )));
-
-        BigDecimal currentMonthTotalAmount = currentMonthExpenses.stream()
-                .map(e -> calculateEffectiveAmount(e, splitShared))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        Map<String, BigDecimal> amountByCategory = expenses.stream()
-                .collect(Collectors.groupingBy(
-                        e -> e.getCategory().name(),
-                        Collectors.reducing(BigDecimal.ZERO, e -> calculateEffectiveAmount(e, splitShared), BigDecimal::add)
-                ))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().setScale(2, RoundingMode.HALF_UP),
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
-
-        Map<String, BigDecimal> amountByStore = expenses.stream()
-                .collect(Collectors.groupingBy(
-                        Expense::getStoreName,
-                        Collectors.reducing(BigDecimal.ZERO, e -> calculateEffectiveAmount(e, splitShared), BigDecimal::add)
-                ))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().setScale(2, RoundingMode.HALF_UP),
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
+        BigDecimal averageMonthlyAmount = BigDecimal.ZERO;
+        if (!expenses.isEmpty()) {
+            LocalDate firstDate = expenses.getFirst().getExpenseDate();
+            LocalDate lastDate = expenses.getLast().getExpenseDate();
+            long monthsBetween = (lastDate.getYear() - firstDate.getYear()) * 12L
+                    + (lastDate.getMonthValue() - firstDate.getMonthValue()) + 1L;
+            long divisor = Math.max(1, monthsBetween);
+            averageMonthlyAmount = totalAmount.divide(BigDecimal.valueOf(divisor), 2, RoundingMode.HALF_UP);
+        }
 
         return new ExpenseSummaryResponse(
                 startDate,
@@ -236,16 +222,19 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     @Override
     public List<CategoryMetadataResponse> getCategories() {
-        return Arrays.stream(ExpenseCategory.values())
-                .map(c -> new CategoryMetadataResponse(c.name(), c.getDisplayName()))
-                .toList();
+        return categoryService.getAllCategories();
+    }
+
+    private ExpenseResponse toResponse(Expense expense) {
+        String displayName = categoryService.getDisplayNameForCode(expense.getCategory());
+        return ExpenseResponse.fromEntity(expense, displayName);
     }
 
     private void applyCreateRequest(Expense expense, ExpenseCreateRequest request) {
         expense.setExpenseDate(request.expenseDate());
         expense.setStoreName(storeNameNormalizer.normalize(request.storeName()));
         expense.setAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
-        expense.setCategory(request.category());
+        expense.setCategory(categoryService.resolveCategoryCode(request.category()));
         expense.setSubcategory(normalizeNullableText(request.subcategory()));
         expense.setDescription(normalizeNullableText(request.description()));
         expense.setRecurring(Boolean.TRUE.equals(request.recurring()));

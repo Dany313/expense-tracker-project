@@ -1,19 +1,10 @@
-export type ExpenseCategoryCode =
-  | 'AFFITTO'
-  | 'BOLLETTE'
-  | 'CARBURANTE_E_TRASPORTI'
-  | 'MANUTENZIONE_AUTO_ORDINARIA'
-  | 'MANUTENZIONE_AUTO_STRAORDINARIA'
-  | 'SPESA_ALIMENTARE_E_CASA'
-  | 'VIAGGI'
-  | 'SVAGO'
-  | 'USCITE_FUORI'
-  | 'SALUTE_E_SPORT'
-  | 'ABBIGLIAMENTO';
+export type ExpenseCategoryCode = string;
 
 export interface CategoryMetadata {
+  id?: string;
   code: ExpenseCategoryCode;
   displayName: string;
+  synonyms?: string | null;
 }
 
 export interface ExpenseCreateRequest {
@@ -66,7 +57,9 @@ export interface PagedExpenseResponse {
 export interface ExpenseSummaryResponse {
   startDate: string | null;
   endDate: string | null;
+  totalCount: number;
   totalAmount: number;
+  averageAmount: number;
   averageMonthlyAmount: number;
   currentMonthTotalAmount: number;
   amountByCategory: Record<string, number>;

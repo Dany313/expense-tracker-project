@@ -38,9 +38,8 @@ public class Expense {
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 50)
-    private ExpenseCategory category;
+    private String category;
 
     @Column(name = "subcategory", length = 100)
     private String subcategory;
@@ -101,11 +100,11 @@ public class Expense {
         this.amount = amount;
     }
 
-    public ExpenseCategory getCategory() {
+    public String getCategory() {
         return category;
     }
 
-    public void setCategory(ExpenseCategory category) {
+    public void setCategory(String category) {
         this.category = category;
     }
 

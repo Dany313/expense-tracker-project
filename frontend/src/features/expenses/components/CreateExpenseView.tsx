@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormValidity } from '../../../shared/hooks/useFormValidity';
 import { KNOWN_STORES } from '../../../shared/utils/constants';
 import { todayIsoDate } from '../../../shared/utils/formatters';
@@ -26,11 +26,17 @@ export function CreateExpenseView({
   const [expenseDate, setExpenseDate] = useState<string>(todayIsoDate());
   const [storeName, setStoreName] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-  const [category, setCategory] = useState<ExpenseCategoryCode>('SPESA_ALIMENTARE_E_CASA');
+  const [category, setCategory] = useState<string>('');
   const [subcategory, setSubcategory] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [recurring, setRecurring] = useState<boolean>(false);
   const [shared, setShared] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!category && categories.length > 0) {
+      setCategory(categories[0].code);
+    }
+  }, [categories, category]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -1,6 +1,5 @@
 package com.daniele.expensetracker.dto;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -28,9 +27,9 @@ public record ExpenseCreateRequest(
         @Schema(description = "Importo della spesa", example = "42.80")
         BigDecimal amount,
 
-        @NotNull(message = "La categoria della spesa è obbligatoria")
-        @Schema(description = "Categoria principale della spesa", example = "SPESA_ALIMENTARE_E_CASA")
-        ExpenseCategory category,
+        @NotBlank(message = "La categoria della spesa è obbligatoria")
+        @Schema(description = "Categoria o codice categoria della spesa registrata a database", example = "SPESA_ALIMENTARE_E_CASA")
+        String category,
 
         @Size(max = 100, message = "La sottocategoria non può superare i 100 caratteri")
         @Schema(description = "Sottocategoria opzionale per un dettaglio più fine", example = "Spesa settimanale", nullable = true)
@@ -50,7 +49,7 @@ public record ExpenseCreateRequest(
             LocalDate expenseDate,
             String storeName,
             BigDecimal amount,
-            ExpenseCategory category,
+            String category,
             String subcategory,
             String description,
             Boolean recurring

@@ -1,19 +1,19 @@
 package com.daniele.expensetracker.controller;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import com.daniele.expensetracker.dto.CategoryMetadataResponse;
+import com.daniele.expensetracker.dto.CategoryRequest;
 import com.daniele.expensetracker.dto.ExpenseCreateRequest;
 import com.daniele.expensetracker.dto.ExpenseFilterCriteria;
 import com.daniele.expensetracker.dto.ExpenseResponse;
 import com.daniele.expensetracker.dto.ExpenseSummaryResponse;
 import com.daniele.expensetracker.dto.ExpenseUpdateRequest;
+import com.daniele.expensetracker.service.CategoryService;
 import com.daniele.expensetracker.service.ExpenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
-import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,28 +34,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/v1/expenses")
-@Tag(name = "Expenses", description = "API CRUD e ricerca avanzata per la gestione delle spese")
+@Tag(name = "Expenses", description = "API REST per la gestione delle spese e delle categorie memorizzate nel database")
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final CategoryService categoryService;
 
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService, CategoryService categoryService) {
         this.expenseService = expenseService;
+        this.categoryService = categoryService;
     }
 
     @PostMapping
-    @Operation(summary = "Crea una nuova spesa", description = "Inserisce una nuova spesa nel database PostgreSQL")
+    @Operation(summary = "Crea una nuova spesa", description = "Inserisce una spesa con data, negozio, importo, categoria e metadati")
     public ResponseEntity<ExpenseResponse> createExpense(@Valid @RequestBody ExpenseCreateRequest request) {
-        ExpenseResponse created = expenseService.createExpense(request);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(created.id())
-                .toUri();
-        return ResponseEntity.created(location).body(created);
+        ExpenseResponse response = expenseService.createExpense(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -66,8 +64,8 @@ public class ExpenseController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "Filtro parziale sul nome del negozio")
             @RequestParam(required = false) String storeName,
-            @Parameter(description = "Categoria della spesa")
-            @RequestParam(required = false) ExpenseCategory category,
+            @Parameter(description = "Categoria o codice categoria della spesa")
+            @RequestParam(required = false) String category,
             @Parameter(description = "Filtro parziale sulla sottocategoria")
             @RequestParam(required = false) String subcategory,
             @Parameter(description = "Importo minimo")
@@ -136,8 +134,31 @@ public class ExpenseController {
     }
 
     @GetMapping("/categories")
-    @Operation(summary = "Elenco categorie disponibili", description = "Restituisce tutte le categorie di spesa supportate")
+    @Operation(summary = "Elenco categorie disponibili", description = "Restituisce tutte le categorie di spesa registrate nel database")
     public ResponseEntity<List<CategoryMetadataResponse>> getCategories() {
-        return ResponseEntity.ok(expenseService.getCategories());
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+
+    @PostMapping("/categories")
+    @Operation(summary = "Crea una nuova categoria", description = "Aggiunge una nuova categoria di spesa con codice, nome e sinonimi nel database")
+    public ResponseEntity<CategoryMetadataResponse> createCategory(@Valid @RequestBody CategoryRequest request) {
+        CategoryMetadataResponse created = categoryService.createCategory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/categories/{code}")
+    @Operation(summary = "Aggiorna una categoria", description = "Modifica il nome visualizzato o i sinonimi di una categoria esistente a database")
+    public ResponseEntity<CategoryMetadataResponse> updateCategory(
+            @PathVariable String code,
+            @Valid @RequestBody CategoryRequest request
+    ) {
+        return ResponseEntity.ok(categoryService.updateCategory(code, request));
+    }
+
+    @DeleteMapping("/categories/{code}")
+    @Operation(summary = "Elimina una categoria", description = "Rimuove una categoria dal database (se non referenziata da spese)")
+    public ResponseEntity<Void> deleteCategory(@PathVariable String code) {
+        categoryService.deleteCategory(code);
+        return ResponseEntity.noContent().build();
     }
 }

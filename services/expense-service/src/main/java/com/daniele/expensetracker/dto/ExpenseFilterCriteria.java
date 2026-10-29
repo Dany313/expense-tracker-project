@@ -1,6 +1,5 @@
 package com.daniele.expensetracker.dto;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -8,7 +7,7 @@ public record ExpenseFilterCriteria(
         LocalDate startDate,
         LocalDate endDate,
         String storeName,
-        ExpenseCategory category,
+        String category,
         String subcategory,
         BigDecimal minAmount,
         BigDecimal maxAmount,
@@ -19,7 +18,7 @@ public record ExpenseFilterCriteria(
             LocalDate startDate,
             LocalDate endDate,
             String storeName,
-            ExpenseCategory category,
+            String category,
             String subcategory,
             BigDecimal minAmount,
             BigDecimal maxAmount,

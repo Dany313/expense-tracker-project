@@ -78,4 +78,24 @@ export const expensesApi = {
   async getCategories(): Promise<CategoryMetadata[]> {
     return httpRequest<CategoryMetadata[]>(`${API_BASE}/categories`);
   },
+
+  async createCategory(payload: { code: string; displayName: string; synonyms?: string }): Promise<CategoryMetadata> {
+    return httpRequest<CategoryMetadata>(`${API_BASE}/categories`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateCategory(code: string, payload: { displayName?: string; synonyms?: string }): Promise<CategoryMetadata> {
+    return httpRequest<CategoryMetadata>(`${API_BASE}/categories/${encodeURIComponent(code)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async deleteCategory(code: string): Promise<void> {
+    return httpRequest<void>(`${API_BASE}/categories/${encodeURIComponent(code)}`, {
+      method: 'DELETE',
+    });
+  },
 };

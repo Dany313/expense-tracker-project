@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import com.daniele.expensetracker.dto.ExpenseResponse;
 import com.daniele.expensetracker.dto.ExpenseSummaryResponse;
 import com.daniele.expensetracker.mcp.ExpenseMcpTools;
@@ -223,7 +222,7 @@ class ExpenseTrackerIntegrationTest {
 
         assertThat(created.id()).isNotNull();
         assertThat(created.storeName()).isEqualTo("ALDI");
-        assertThat(created.category()).isEqualTo(ExpenseCategory.SPESA_ALIMENTARE_E_CASA);
+        assertThat(created.category()).isEqualTo("SPESA_ALIMENTARE_E_CASA");
         assertThat(created.subcategory()).isEqualTo("Frutta e verdura");
 
         // 2. Agent searches expenses
@@ -296,7 +295,7 @@ class ExpenseTrackerIntegrationTest {
                     assertThat(all).hasSize(1);
                     assertThat(all.getFirst().getStoreName()).isEqualTo("CONAD");
                     assertThat(all.getFirst().getAmount()).isEqualByComparingTo("63.45");
-                    assertThat(all.getFirst().getCategory()).isEqualTo(ExpenseCategory.SPESA_ALIMENTARE_E_CASA);
+                    assertThat(all.getFirst().getCategory()).isEqualTo("SPESA_ALIMENTARE_E_CASA");
                     assertThat(all.getFirst().getSubcategory()).isEqualTo("Spesa da scontrino OCR");
                 });
     }

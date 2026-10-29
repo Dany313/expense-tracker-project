@@ -1,6 +1,5 @@
 package com.daniele.expensetracker.messaging;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import com.daniele.expensetracker.dto.ExpenseCreateRequest;
 import com.daniele.expensetracker.dto.ExpenseResponse;
 import com.daniele.expensetracker.service.ExpenseService;
@@ -40,13 +39,12 @@ public class ExpenseQueueConsumer {
         }
 
         LocalDate date = message.expenseDate() != null ? message.expenseDate() : LocalDate.now();
-        ExpenseCategory category = ExpenseCategory.fromFlexibleString(message.category());
 
         ExpenseCreateRequest createRequest = new ExpenseCreateRequest(
                 date,
                 message.storeName().trim(),
                 message.amount(),
-                category,
+                message.category(),
                 message.subcategory(),
                 message.description(),
                 Boolean.TRUE.equals(message.recurring()),

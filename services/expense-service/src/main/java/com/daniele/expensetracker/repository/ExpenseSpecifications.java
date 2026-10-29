@@ -31,8 +31,8 @@ public final class ExpenseSpecifications {
                 String pattern = "%" + criteria.storeName().trim().toLowerCase(Locale.ROOT) + "%";
                 predicates.add(cb.like(cb.lower(root.get("storeName")), pattern));
             }
-            if (criteria.category() != null) {
-                predicates.add(cb.equal(root.get("category"), criteria.category()));
+            if (criteria.category() != null && !criteria.category().isBlank()) {
+                predicates.add(cb.equal(cb.upper(root.get("category")), criteria.category().trim().toUpperCase(Locale.ROOT)));
             }
             if (criteria.subcategory() != null && !criteria.subcategory().isBlank()) {
                 String pattern = "%" + criteria.subcategory().trim().toLowerCase(Locale.ROOT) + "%";

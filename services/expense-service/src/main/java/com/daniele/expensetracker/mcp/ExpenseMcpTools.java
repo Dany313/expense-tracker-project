@@ -1,6 +1,5 @@
 package com.daniele.expensetracker.mcp;
 
-import com.daniele.expensetracker.domain.ExpenseCategory;
 import com.daniele.expensetracker.dto.CategoryMetadataResponse;
 import com.daniele.expensetracker.dto.ExpenseCreateRequest;
 import com.daniele.expensetracker.dto.ExpenseFilterCriteria;
@@ -8,7 +7,6 @@ import com.daniele.expensetracker.dto.ExpenseResponse;
 import com.daniele.expensetracker.dto.ExpenseSummaryResponse;
 import com.daniele.expensetracker.dto.ExpenseUpdateRequest;
 import com.daniele.expensetracker.service.ExpenseService;
-import com.daniele.expensetracker.service.StoreNameNormalizer;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,11 +20,9 @@ import org.springframework.stereotype.Component;
 public class ExpenseMcpTools {
 
     private final ExpenseService expenseService;
-    private final StoreNameNormalizer storeNameNormalizer;
 
-    public ExpenseMcpTools(ExpenseService expenseService, StoreNameNormalizer storeNameNormalizer) {
+    public ExpenseMcpTools(ExpenseService expenseService) {
         this.expenseService = expenseService;
-        this.storeNameNormalizer = storeNameNormalizer;
     }
 
     @Tool(
@@ -34,8 +30,8 @@ public class ExpenseMcpTools {
             description = """
                     Inserisce una nuova spesa nel database PostgreSQL.
                     Permette all'agente di registrare la data (YYYY-MM-DD, default oggi se omessa),
-                    il negozio, l'importo, la categoria principale, una sottocategoria opzionale,
-                    una descrizione/nota opzionale e se la spesa è ricorrente.
+                    il negozio, l'importo, la categoria principale (risolta dinamicamente dal database),
+                    una sottocategoria opzionale, una descrizione/nota opzionale e se la spesa è ricorrente o condivisa.
                     """
     )
     public ExpenseResponse createExpense(
@@ -45,7 +41,7 @@ public class ExpenseMcpTools {
             String storeName,
             @ToolParam(description = "Importo numerico positivo della spesa (es. 25.50)")
             BigDecimal amount,
-            @ToolParam(description = "Categoria principale della spesa: AFFITTO, BOLLETTE, CARBURANTE_E_TRASPORTI, MANUTENZIONE_AUTO_ORDINARIA, MANUTENZIONE_AUTO_STRAORDINARIA, SPESA_ALIMENTARE_E_CASA, VIAGGI, SVAGO, USCITE_FUORI, SALUTE_E_SPORT, ABBIGLIAMENTO (accetta anche termini in italiano o sinonimi come SPESA, ALIMENTARI, BENZINA, TAGLIANDO, RISTORANTE, USCITE, PALESTRA, VESTITI, ALTRO)")
+            @ToolParam(description = "Categoria o tipo di spesa (risolta dinamicamente dal database in base al codice, nome o sinonimi; usa list_expense_metadata per l'elenco)")
             String category,
             @ToolParam(description = "Sottocategoria opzionale (es. 'Spesa settimanale', 'Carburante', 'Farmaci', 'Abbonamento streaming')", required = false)
             String subcategory,
@@ -60,13 +56,11 @@ public class ExpenseMcpTools {
                 ? LocalDate.parse(expenseDate.trim())
                 : LocalDate.now();
 
-        ExpenseCategory parsedCategory = ExpenseCategory.fromFlexibleString(category);
-
         ExpenseCreateRequest request = new ExpenseCreateRequest(
                 parsedDate,
                 storeName,
                 amount,
-                parsedCategory,
+                category,
                 subcategory,
                 description,
                 recurring != null ? recurring : false,
@@ -101,7 +95,7 @@ public class ExpenseMcpTools {
             String endDate,
             @ToolParam(description = "Nome (o parte del nome) del negozio da cercare (opzionale)", required = false)
             String storeName,
-            @ToolParam(description = "Categoria della spesa (es. SPESA_ALIMENTARE_E_CASA, BOLLETTE, CARBURANTE_E_TRASPORTI, ecc., opzionale)", required = false)
+            @ToolParam(description = "Categoria o codice categoria della spesa (opzionale)", required = false)
             String category,
             @ToolParam(description = "Sottocategoria (anche parziale) da cercare (opzionale)", required = false)
             String subcategory,
@@ -120,7 +114,7 @@ public class ExpenseMcpTools {
                 startDate != null && !startDate.isBlank() ? LocalDate.parse(startDate.trim()) : null,
                 endDate != null && !endDate.isBlank() ? LocalDate.parse(endDate.trim()) : null,
                 storeName,
-                category != null && !category.isBlank() ? ExpenseCategory.fromFlexibleString(category) : null,
+                category,
                 subcategory,
                 minAmount,
                 maxAmount,
@@ -161,7 +155,7 @@ public class ExpenseMcpTools {
                 expenseDate != null && !expenseDate.isBlank() ? LocalDate.parse(expenseDate.trim()) : null,
                 storeName,
                 amount,
-                category != null && !category.isBlank() ? ExpenseCategory.fromFlexibleString(category) : null,
+                category,
                 subcategory,
                 description,
                 recurring,
@@ -178,26 +172,26 @@ public class ExpenseMcpTools {
             @ToolParam(description = "UUID univoco della spesa da eliminare")
             String expenseId
     ) {
-        UUID id = UUID.fromString(expenseId.trim());
-        expenseService.deleteExpense(id);
-        return Map.of(
-                "deleted", true,
-                "expenseId", id.toString(),
-                "message", "Spesa eliminata con successo"
-        );
+        expenseService.deleteExpense(UUID.fromString(expenseId.trim()));
+        return Map.of("expenseId", expenseId, "deleted", true);
     }
 
     @Tool(
             name = "get_expense_summary",
             description = """
-                    Calcola il riepilogo delle spese (conteggio totale, importo totale, spesa media,
-                    totale aggregato per categoria e per negozio) in un intervallo di date opzionale.
+                    Calcola il riepilogo statistico e finanziario delle spese registrate:
+                    - Conteggio totale spese
+                    - Somma totale spesa
+                    - Importo medio per singola spesa
+                    - Ripartizione dell'importo per categoria
+                    - Ripartizione dell'importo per negozio
+                    È possibile filtrare su un periodo specifico indicando startDate e/o endDate (YYYY-MM-DD).
                     """
     )
     public ExpenseSummaryResponse getExpenseSummary(
-            @ToolParam(description = "Data inizio periodo in formato YYYY-MM-DD (opzionale)", required = false)
+            @ToolParam(description = "Data iniziale inclusa YYYY-MM-DD (opzionale)", required = false)
             String startDate,
-            @ToolParam(description = "Data fine periodo in formato YYYY-MM-DD (opzionale)", required = false)
+            @ToolParam(description = "Data finale inclusa YYYY-MM-DD (opzionale)", required = false)
             String endDate
     ) {
         LocalDate parsedStart = startDate != null && !startDate.isBlank() ? LocalDate.parse(startDate.trim()) : null;
@@ -207,13 +201,13 @@ public class ExpenseMcpTools {
 
     @Tool(
             name = "list_expense_metadata",
-            description = "Restituisce le categorie di spesa supportate e le mappature dei negozi noti."
+            description = "Restituisce l'elenco di tutte le categorie attualmente configurate nel database."
     )
     public Map<String, Object> listExpenseMetadata() {
         List<CategoryMetadataResponse> categories = expenseService.getCategories();
         return Map.of(
                 "categories", categories,
-                "knownStoreMappings", storeNameNormalizer.getKnownStoreAliases()
+                "totalCategories", categories.size()
         );
     }
 }
