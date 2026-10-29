@@ -29,7 +29,7 @@ public record ExpenseCreateRequest(
         BigDecimal amount,
 
         @NotNull(message = "La categoria della spesa è obbligatoria")
-        @Schema(description = "Categoria principale della spesa", example = "GROCERIES")
+        @Schema(description = "Categoria principale della spesa", example = "SPESA_ALIMENTARE_E_CASA")
         ExpenseCategory category,
 
         @Size(max = 100, message = "La sottocategoria non può superare i 100 caratteri")

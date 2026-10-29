@@ -16,7 +16,7 @@ public record ReceiptExtractionResponse(
         @Schema(description = "Importo totale pagato", example = "38.50")
         BigDecimal amount,
 
-        @Schema(description = "Categoria principale suggerita (compatibile con expense-service)", example = "GROCERIES")
+        @Schema(description = "Categoria principale suggerita (compatibile con expense-service)", example = "SPESA_ALIMENTARE_E_CASA")
         String category,
 
         @Schema(description = "Sottocategoria opzionale suggerita", example = "Spesa supermercato", nullable = true)

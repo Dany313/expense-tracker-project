@@ -1,16 +1,14 @@
 export type ExpenseCategoryCode =
-  | 'GROCERIES'
-  | 'DINING'
-  | 'TRANSPORT'
-  | 'HOUSING'
-  | 'BILLS_AND_UTILITIES'
-  | 'HEALTH'
-  | 'PERSONAL_CARE'
-  | 'SHOPPING'
-  | 'ENTERTAINMENT'
-  | 'TRAVEL'
-  | 'EDUCATION'
-  | 'OTHER';
+  | 'AFFITTO'
+  | 'BOLLETTE'
+  | 'CARBURANTE_E_TRASPORTI'
+  | 'MANUTENZIONE_AUTO_ORDINARIA'
+  | 'MANUTENZIONE_AUTO_STRAORDINARIA'
+  | 'SPESA_ALIMENTARE_E_CASA'
+  | 'VIAGGI'
+  | 'SVAGO'
+  | 'SALUTE_E_SPORT'
+  | 'ABBIGLIAMENTO';
 
 export interface CategoryMetadata {
   code: ExpenseCategoryCode;

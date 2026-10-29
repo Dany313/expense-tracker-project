@@ -22,7 +22,7 @@ public class SpringAiReceiptVisionExtractor implements ReceiptVisionExtractor {
                restituisci il nome principale della catena in MAIUSCOLO.
             4. amount: estrai l'importo TOTALE EFFETTIVAMENTE PAGATO (es. 38.50). Non confonderlo con il contante versato, il resto o i subtotali.
             5. category: scegli UNA sola categoria tra:
-               GROCERIES, DINING, TRANSPORT, HOUSING, BILLS_AND_UTILITIES, HEALTH, PERSONAL_CARE, SHOPPING, ENTERTAINMENT, TRAVEL, EDUCATION, OTHER.
+               AFFITTO, BOLLETTE, CARBURANTE_E_TRASPORTI, MANUTENZIONE_AUTO_ORDINARIA, MANUTENZIONE_AUTO_STRAORDINARIA, SPESA_ALIMENTARE_E_CASA, VIAGGI, SVAGO, SALUTE_E_SPORT, ABBIGLIAMENTO.
             6. subcategory: suggerisci una sottocategoria sintetica opzionale (es. "Spesa supermercato", "Igiene casa e persona", "Ristorante", "Farmacia") oppure null.
             7. description: breve sintesi opzionale (es. "Scontrino CONAD").
             """;

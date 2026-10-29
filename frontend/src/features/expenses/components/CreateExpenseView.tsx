@@ -26,7 +26,7 @@ export function CreateExpenseView({
   const [expenseDate, setExpenseDate] = useState<string>(todayIsoDate());
   const [storeName, setStoreName] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-  const [category, setCategory] = useState<ExpenseCategoryCode>('GROCERIES');
+  const [category, setCategory] = useState<ExpenseCategoryCode>('SPESA_ALIMENTARE_E_CASA');
   const [subcategory, setSubcategory] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [recurring, setRecurring] = useState<boolean>(false);

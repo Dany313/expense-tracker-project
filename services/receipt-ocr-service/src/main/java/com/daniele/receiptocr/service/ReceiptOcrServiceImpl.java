@@ -31,9 +31,9 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
     );
 
     private static final Set<String> VALID_CATEGORIES = Set.of(
-            "GROCERIES", "DINING", "TRANSPORT", "HOUSING", "BILLS_AND_UTILITIES",
-            "HEALTH", "PERSONAL_CARE", "SHOPPING", "ENTERTAINMENT", "TRAVEL",
-            "EDUCATION", "OTHER"
+            "AFFITTO", "BOLLETTE", "CARBURANTE_E_TRASPORTI", "MANUTENZIONE_AUTO_ORDINARIA",
+            "MANUTENZIONE_AUTO_STRAORDINARIA", "SPESA_ALIMENTARE_E_CASA", "VIAGGI", "SVAGO",
+            "SALUTE_E_SPORT", "ABBIGLIAMENTO"
     );
 
     private final ReceiptVisionExtractor visionExtractor;
@@ -158,10 +158,7 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                 return upper;
             }
         }
-        if ("TIGOTA".equals(normalizedStore) || "HAPPYCASA".equals(normalizedStore)) {
-            return "PERSONAL_CARE";
-        }
-        return "GROCERIES";
+        return "SPESA_ALIMENTARE_E_CASA";
     }
 
     private String normalizeNullable(String value) {

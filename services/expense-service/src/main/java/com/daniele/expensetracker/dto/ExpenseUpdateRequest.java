@@ -23,7 +23,7 @@ public record ExpenseUpdateRequest(
         @Schema(description = "Nuovo importo della spesa (opzionale)", example = "55.20")
         BigDecimal amount,
 
-        @Schema(description = "Nuova categoria della spesa (opzionale)", example = "GROCERIES")
+        @Schema(description = "Nuova categoria della spesa (opzionale)", example = "SPESA_ALIMENTARE_E_CASA")
         ExpenseCategory category,
 
         @Size(max = 100, message = "La sottocategoria non può superare i 100 caratteri")

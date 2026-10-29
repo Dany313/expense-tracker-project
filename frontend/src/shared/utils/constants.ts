@@ -1,18 +1,16 @@
 import type { CategoryMetadata, ExpenseCategoryCode } from '../../features/expenses/types/expense.types';
 
 export const DEFAULT_CATEGORIES: CategoryMetadata[] = [
-  { code: 'GROCERIES', displayName: 'Alimentari e Supermercato' },
-  { code: 'DINING', displayName: 'Ristorazione, Bar e Delivery' },
-  { code: 'TRANSPORT', displayName: 'Trasporti, Carburante e Auto' },
-  { code: 'HOUSING', displayName: 'Casa, Affitto e Manutenzione' },
-  { code: 'BILLS_AND_UTILITIES', displayName: 'Bollette, Utenze e Tasse' },
-  { code: 'HEALTH', displayName: 'Salute, Farmacia e Visite Mediche' },
-  { code: 'PERSONAL_CARE', displayName: 'Cura della Persona e Igiene Casa' },
-  { code: 'SHOPPING', displayName: 'Acquisti, Abbigliamento ed Elettronica' },
-  { code: 'ENTERTAINMENT', displayName: 'Svago, Abbonamenti e Tempo Libero' },
-  { code: 'TRAVEL', displayName: 'Viaggi e Vacanze' },
-  { code: 'EDUCATION', displayName: 'Istruzione, Libri e Formazione' },
-  { code: 'OTHER', displayName: 'Altro' },
+  { code: 'SPESA_ALIMENTARE_E_CASA', displayName: 'Spesa alimentare e casa' },
+  { code: 'AFFITTO', displayName: 'Affitto' },
+  { code: 'BOLLETTE', displayName: 'Bollette' },
+  { code: 'CARBURANTE_E_TRASPORTI', displayName: 'Carburante e trasporti' },
+  { code: 'MANUTENZIONE_AUTO_ORDINARIA', displayName: 'Manutenzione auto ordinaria' },
+  { code: 'MANUTENZIONE_AUTO_STRAORDINARIA', displayName: 'Manutenzione auto straordinaria' },
+  { code: 'SVAGO', displayName: 'Svago' },
+  { code: 'SALUTE_E_SPORT', displayName: 'Salute e sport' },
+  { code: 'ABBIGLIAMENTO', displayName: 'Abbigliamento' },
+  { code: 'VIAGGI', displayName: 'Viaggi' },
 ];
 
 export const KNOWN_STORES: string[] = [

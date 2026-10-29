@@ -45,7 +45,7 @@ public class ExpenseMcpTools {
             String storeName,
             @ToolParam(description = "Importo numerico positivo della spesa (es. 25.50)")
             BigDecimal amount,
-            @ToolParam(description = "Categoria principale della spesa: GROCERIES, DINING, TRANSPORT, HOUSING, BILLS_AND_UTILITIES, HEALTH, PERSONAL_CARE, SHOPPING, ENTERTAINMENT, TRAVEL, EDUCATION, OTHER (accetta anche termini in italiano come ALIMENTARI, RISTORAZIONE, TRASPORTI, CASA, BOLLETTE, SALUTE, CURA_PERSONA, SVAGO, VIAGGI, ISTRUZIONE, ALTRO)")
+            @ToolParam(description = "Categoria principale della spesa: AFFITTO, BOLLETTE, CARBURANTE_E_TRASPORTI, MANUTENZIONE_AUTO_ORDINARIA, MANUTENZIONE_AUTO_STRAORDINARIA, SPESA_ALIMENTARE_E_CASA, VIAGGI, SVAGO, SALUTE_E_SPORT, ABBIGLIAMENTO (accetta anche termini in italiano o sinonimi come SPESA, ALIMENTARI, BENZINA, TAGLIANDO, RISTORANTE, PALESTRA, VESTITI, ALTRO)")
             String category,
             @ToolParam(description = "Sottocategoria opzionale (es. 'Spesa settimanale', 'Carburante', 'Farmaci', 'Abbonamento streaming')", required = false)
             String subcategory,
@@ -101,7 +101,7 @@ public class ExpenseMcpTools {
             String endDate,
             @ToolParam(description = "Nome (o parte del nome) del negozio da cercare (opzionale)", required = false)
             String storeName,
-            @ToolParam(description = "Categoria della spesa (es. GROCERIES, DINING, TRANSPORT, ecc., opzionale)", required = false)
+            @ToolParam(description = "Categoria della spesa (es. SPESA_ALIMENTARE_E_CASA, BOLLETTE, CARBURANTE_E_TRASPORTI, ecc., opzionale)", required = false)
             String category,
             @ToolParam(description = "Sottocategoria (anche parziale) da cercare (opzionale)", required = false)
             String subcategory,

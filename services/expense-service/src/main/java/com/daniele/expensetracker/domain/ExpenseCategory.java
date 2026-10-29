@@ -4,18 +4,16 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public enum ExpenseCategory {
-    GROCERIES("Alimentari e Supermercato"),
-    DINING("Ristorazione, Bar e Delivery"),
-    TRANSPORT("Trasporti, Carburante e Auto"),
-    HOUSING("Casa, Affitto e Manutenzione"),
-    BILLS_AND_UTILITIES("Bollette, Utenze e Tasse"),
-    HEALTH("Salute, Farmacia e Visite Mediche"),
-    PERSONAL_CARE("Cura della Persona e Igiene Casa"),
-    SHOPPING("Acquisti, Abbigliamento ed Elettronica"),
-    ENTERTAINMENT("Svago, Abbonamenti e Tempo Libero"),
-    TRAVEL("Viaggi e Vacanze"),
-    EDUCATION("Istruzione, Libri e Formazione"),
-    OTHER("Altro");
+    AFFITTO("Affitto"),
+    BOLLETTE("Bollette"),
+    CARBURANTE_E_TRASPORTI("Carburante e trasporti"),
+    MANUTENZIONE_AUTO_ORDINARIA("Manutenzione auto ordinaria"),
+    MANUTENZIONE_AUTO_STRAORDINARIA("Manutenzione auto straordinaria"),
+    SPESA_ALIMENTARE_E_CASA("Spesa alimentare e casa"),
+    VIAGGI("Viaggi"),
+    SVAGO("Svago"),
+    SALUTE_E_SPORT("Salute e sport"),
+    ABBIGLIAMENTO("Abbigliamento");
 
     private final String displayName;
 
@@ -42,18 +40,16 @@ public enum ExpenseCategory {
         }
 
         return switch (normalized) {
-            case "ALIMENTARI", "SUPERMERCATO", "SPESA", "CIBO" -> GROCERIES;
-            case "RISTORANTE", "RISTORAZIONE", "BAR", "PIZZERIA", "DELIVERY" -> DINING;
-            case "TRASPORTI", "AUTO", "CARBURANTE", "BENZINA", "MEZZI" -> TRANSPORT;
-            case "CASA", "AFFITTO", "MUTUO", "ARREDAMENTO" -> HOUSING;
-            case "BOLLETTE", "UTENZE", "TASSE" -> BILLS_AND_UTILITIES;
-            case "SALUTE", "FARMACIA", "MEDICO", "SPESE_MEDICHE" -> HEALTH;
-            case "CURA_PERSONA", "IGIENE", "DETERSIVI", "COSMETICI" -> PERSONAL_CARE;
-            case "ACQUISTI", "ABBIGLIAMENTO", "ELETTRONICA", "TECH" -> SHOPPING;
-            case "SVAGO", "INTRATTENIMENTO", "ABBONAMENTI", "HOBBY", "SPORT" -> ENTERTAINMENT;
-            case "VIAGGI", "VACANZE", "HOTEL", "VOLI" -> TRAVEL;
-            case "ISTRUZIONE", "LIBRI", "CORSI", "FORMAZIONE" -> EDUCATION;
-            case "ALTRO", "VARIE" -> OTHER;
+            case "AFFITTO", "CASA_AFFITTO", "CANONE", "LOCAZIONE", "HOUSING", "MUTUO" -> AFFITTO;
+            case "BOLLETTE", "UTENZE", "LUCE", "GAS", "ACQUA", "INTERNET", "BILLS_AND_UTILITIES", "BOLLETTA", "TARI" -> BOLLETTE;
+            case "CARBURANTE", "BENZINA", "GASOLIO", "CARBURANTE_E_TRASPORTI", "TRASPORTI", "MEZZI", "TRENO", "BUS", "METRO", "AUTOSTRADA", "PEDAGGIO", "TRANSPORT" -> CARBURANTE_E_TRASPORTI;
+            case "TAGLIANDO", "REVISIONE", "CAMBIO_OLIO", "MANUTENZIONE_ORDINARIA", "MANUTENZIONE_AUTO_ORDINARIA", "GOMME", "GOMMISTA" -> MANUTENZIONE_AUTO_ORDINARIA;
+            case "GUASTO", "RIPARAZIONE", "CARROZZIERE", "MANUTENZIONE_STRAORDINARIA", "MANUTENZIONE_AUTO_STRAORDINARIA", "MECCANICO" -> MANUTENZIONE_AUTO_STRAORDINARIA;
+            case "SPESA", "ALIMENTARI", "SUPERMERCATO", "CASA", "IGIENE", "DETERSIVI", "DROGHERIA", "SPESA_ALIMENTARE_E_CASA", "GROCERIES", "PERSONAL_CARE", "OTHER", "ALTRO" -> SPESA_ALIMENTARE_E_CASA;
+            case "VIAGGI", "VACANZE", "HOTEL", "VOLI", "B&B", "AIRBNB", "TRAVEL", "VACANZA", "VIAGGIO" -> VIAGGI;
+            case "SVAGO", "TEMPO_LIBERO", "RISTORANTE", "BAR", "PUB", "PIZZERIA", "CINEMA", "GIOCHI", "VIDEOGIOCHI", "ABBONAMENTI", "NETFLIX", "SPOTIFY", "ENTERTAINMENT", "DINING", "DELIVERY" -> SVAGO;
+            case "SALUTE", "SPORT", "FARMACIA", "MEDICO", "VISITE", "PALESTRA", "PISCINA", "SALUTE_E_SPORT", "HEALTH" -> SALUTE_E_SPORT;
+            case "ABBIGLIAMENTO", "VESTITI", "SCARPE", "MODA", "ACCESSORI", "SHOPPING" -> ABBIGLIAMENTO;
             default -> throw new IllegalArgumentException(
                     "Categoria non valida: '" + raw + "'. Valori supportati: " + Arrays.toString(values())
             );

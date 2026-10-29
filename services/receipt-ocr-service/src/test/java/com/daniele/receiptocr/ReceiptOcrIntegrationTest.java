@@ -80,7 +80,7 @@ class ReceiptOcrIntegrationTest {
                         "2026-10-19",
                         "Spazio Conad Superstore",
                         new BigDecimal("45.60"),
-                        "GROCERIES",
+                        "SPESA_ALIMENTARE_E_CASA",
                         "Spesa alimentare",
                         "Scontrino supermercato Conad",
                         null
@@ -99,7 +99,7 @@ class ReceiptOcrIntegrationTest {
                 .andExpect(jsonPath("$.expenseDate").value("2026-10-19"))
                 .andExpect(jsonPath("$.storeName").value("CONAD"))
                 .andExpect(jsonPath("$.amount").value(45.60))
-                .andExpect(jsonPath("$.category").value("GROCERIES"))
+                .andExpect(jsonPath("$.category").value("SPESA_ALIMENTARE_E_CASA"))
                 .andExpect(jsonPath("$.subcategory").value("Spesa alimentare"))
                 .andExpect(jsonPath("$.recurring").value(false));
     }
@@ -156,7 +156,7 @@ class ReceiptOcrIntegrationTest {
                         "2026-10-18",
                         "Tigotà Gottardo",
                         new BigDecimal("21.90"),
-                        "PERSONAL_CARE",
+                        "SPESA_ALIMENTARE_E_CASA",
                         "Igiene casa",
                         "Scontrino Tigotà",
                         null
@@ -169,7 +169,7 @@ class ReceiptOcrIntegrationTest {
         assertThat(extracted.expenseDate()).isEqualTo(LocalDate.of(2026, 10, 18));
         assertThat(extracted.storeName()).isEqualTo("TIGOTA");
         assertThat(extracted.amount()).isEqualByComparingTo("21.90");
-        assertThat(extracted.category()).isEqualTo("PERSONAL_CARE");
+        assertThat(extracted.category()).isEqualTo("SPESA_ALIMENTARE_E_CASA");
         assertThat(extracted.subcategory()).isEqualTo("Igiene casa");
     }
 
@@ -187,7 +187,7 @@ class ReceiptOcrIntegrationTest {
                     "2026-10-22",
                     "Esselunga S.p.A.",
                     new BigDecimal("63.40"),
-                    "GROCERIES",
+                    "SPESA_ALIMENTARE_E_CASA",
                     "Spesa settimanale",
                     "Scontrino Esselunga tramite coda RabbitMQ",
                     null

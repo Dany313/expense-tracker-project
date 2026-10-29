@@ -65,7 +65,7 @@ class ExpenseAgentIntegrationTest {
     @DisplayName("REST /api/v1/agent/text: Invia testo a Gemini connesso all'MCP e restituisce la risposta")
     void shouldProcessTextMessageThroughGeminiMcpAgent() throws Exception {
         String userText = "Ho appena speso 28,50 euro da Aldi per la spesa alimentare";
-        String expectedReply = "Ho registrato la spesa di 28,50 EUR presso ALDI nella categoria GROCERIES.";
+        String expectedReply = "Ho registrato la spesa di 28,50 EUR presso ALDI nella categoria SPESA_ALIMENTARE_E_CASA.";
 
         when(expenseAgentAiGateway.executeWithMcpTools(userText)).thenReturn(expectedReply);
 
@@ -91,7 +91,7 @@ class ExpenseAgentIntegrationTest {
     @DisplayName("REST /api/v1/agent/voice: Trascrive un vocale (.ogg Telegram) in testo e lo manda a Gemini connesso all'MCP")
     void shouldTranscribeMultipartVoiceAndExecuteGeminiMcpAgent() throws Exception {
         String transcribedText = "Segna 15 euro spesi oggi da Tigotà per detersivi";
-        String expectedReply = "Perfetto! Ho inserito la spesa di 15,00 EUR presso TIGOTA nella categoria PERSONAL_CARE.";
+        String expectedReply = "Perfetto! Ho inserito la spesa di 15,00 EUR presso TIGOTA nella categoria SPESA_ALIMENTARE_E_CASA.";
 
         when(voiceTranscriptionService.transcribeAudioToText(any(), any())).thenReturn(transcribedText);
         when(expenseAgentAiGateway.executeWithMcpTools(eq(transcribedText))).thenReturn(expectedReply);
@@ -136,7 +136,7 @@ class ExpenseAgentIntegrationTest {
     @DisplayName("RabbitMQ Queue + Retry: Accoda comando all'Agente AI e supera uno spike temporaneo (429 Too Many Requests) di Gemini")
     void shouldEnqueueAndRetryAgentCommandWhenGeminiExperiencesTransientSpike() throws Exception {
         String commandText = "Aggiungi 42 euro spesi da Conad per la spesa";
-        String expectedReply = "Ho aggiunto 42,00 EUR da CONAD nella categoria GROCERIES.";
+        String expectedReply = "Ho aggiunto 42,00 EUR da CONAD nella categoria SPESA_ALIMENTARE_E_CASA.";
 
         AtomicInteger attempts = new AtomicInteger(0);
         when(expenseAgentAiGateway.executeWithMcpTools(commandText)).thenAnswer(invocation -> {

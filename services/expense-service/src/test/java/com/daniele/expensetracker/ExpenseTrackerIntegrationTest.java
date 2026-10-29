@@ -75,7 +75,7 @@ class ExpenseTrackerIntegrationTest {
                   "expenseDate": "2026-10-19",
                   "storeName": "Spazio Conad",
                   "amount": 48.90,
-                  "category": "GROCERIES",
+                  "category": "SPESA_ALIMENTARE_E_CASA",
                   "subcategory": "Spesa settimanale",
                   "description": "Spesa alimentare con prodotti freschi",
                   "recurring": false
@@ -89,7 +89,7 @@ class ExpenseTrackerIntegrationTest {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.storeName").value("CONAD"))
                 .andExpect(jsonPath("$.amount").value(48.90))
-                .andExpect(jsonPath("$.category").value("GROCERIES"))
+                .andExpect(jsonPath("$.category").value("SPESA_ALIMENTARE_E_CASA"))
                 .andExpect(jsonPath("$.subcategory").value("Spesa settimanale"))
                 .andReturn();
 
@@ -124,11 +124,11 @@ class ExpenseTrackerIntegrationTest {
         String putPayload = """
                 {
                   "expenseDate": "2026-10-18",
-                  "storeName": "Tigotà",
+                  "storeName": "Zara",
                   "amount": 19.50,
-                  "category": "PERSONAL_CARE",
+                  "category": "ABBIGLIAMENTO",
                   "subcategory": null,
-                  "description": "Prodotti igiene casa",
+                  "description": "Maglietta cotone",
                   "recurring": false
                 }
                 """;
@@ -137,17 +137,17 @@ class ExpenseTrackerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(putPayload))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.storeName").value("TIGOTA"))
-                .andExpect(jsonPath("$.category").value("PERSONAL_CARE"))
+                .andExpect(jsonPath("$.storeName").value("ZARA"))
+                .andExpect(jsonPath("$.category").value("ABBIGLIAMENTO"))
                 .andExpect(jsonPath("$.subcategory").isEmpty());
 
         // Search with filters
         mockMvc.perform(get("/api/v1/expenses")
-                        .param("category", "PERSONAL_CARE")
-                        .param("storeName", "tigo"))
+                        .param("category", "ABBIGLIAMENTO")
+                        .param("storeName", "zar"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
-                .andExpect(jsonPath("$.content[0].storeName").value("TIGOTA"));
+                .andExpect(jsonPath("$.content[0].storeName").value("ZARA"));
 
         // Summary endpoint
         mockMvc.perform(get("/api/v1/expenses/summary")
@@ -156,7 +156,7 @@ class ExpenseTrackerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(1))
                 .andExpect(jsonPath("$.totalAmount").value(19.50))
-                .andExpect(jsonPath("$.amountByCategory.PERSONAL_CARE").value(19.50));
+                .andExpect(jsonPath("$.amountByCategory.ABBIGLIAMENTO").value(19.50));
 
         // DELETE
         mockMvc.perform(delete("/api/v1/expenses/{id}", created.id()))
@@ -223,7 +223,7 @@ class ExpenseTrackerIntegrationTest {
 
         assertThat(created.id()).isNotNull();
         assertThat(created.storeName()).isEqualTo("ALDI");
-        assertThat(created.category()).isEqualTo(ExpenseCategory.GROCERIES);
+        assertThat(created.category()).isEqualTo(ExpenseCategory.SPESA_ALIMENTARE_E_CASA);
         assertThat(created.subcategory()).isEqualTo("Frutta e verdura");
 
         // 2. Agent searches expenses
@@ -231,7 +231,7 @@ class ExpenseTrackerIntegrationTest {
                 "2026-10-01",
                 "2026-10-31",
                 "ALDI",
-                "GROCERIES",
+                "SPESA_ALIMENTARE_E_CASA",
                 "Frutta",
                 null,
                 null,
@@ -276,7 +276,7 @@ class ExpenseTrackerIntegrationTest {
                 LocalDate.of(2026, 10, 22),
                 "Spazio Conad",
                 new BigDecimal("63.45"),
-                "GROCERIES",
+                "SPESA_ALIMENTARE_E_CASA",
                 "Spesa da scontrino OCR",
                 "Importato via RabbitMQ da receipt-ocr-service",
                 false
@@ -296,7 +296,7 @@ class ExpenseTrackerIntegrationTest {
                     assertThat(all).hasSize(1);
                     assertThat(all.getFirst().getStoreName()).isEqualTo("CONAD");
                     assertThat(all.getFirst().getAmount()).isEqualByComparingTo("63.45");
-                    assertThat(all.getFirst().getCategory()).isEqualTo(ExpenseCategory.GROCERIES);
+                    assertThat(all.getFirst().getCategory()).isEqualTo(ExpenseCategory.SPESA_ALIMENTARE_E_CASA);
                     assertThat(all.getFirst().getSubcategory()).isEqualTo("Spesa da scontrino OCR");
                 });
     }
