@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     paths-ignore:
       - 'README.md'
       - 'docs/**'
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ghcr-build-and-push
+  group: ghcr-build-and-push-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -74,7 +75,8 @@ jobs:
         with:
           images: ${{ steps.image_info.outputs.image_path }}
           tags: |
-            type=raw,value=latest,enable=true
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=ref,event=branch
             type=sha,prefix=sha-
 
