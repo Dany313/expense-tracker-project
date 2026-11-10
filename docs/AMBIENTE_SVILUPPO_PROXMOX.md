@@ -8,13 +8,13 @@ Questo documento descrive l'architettura, la configurazione e il flusso di lavor
 
 | Componente | Ruolo | Indirizzo / URL | Credenziali / Note |
 |---|---|---|---|
-| **Proxmox VE Web UI** | Hypervisor Host (Lenovo ThinkPad) | `https://192.168.1.240:8006` | Utente `root` |
-| **Proxmox Host SSH** | Accesso shell host | `ssh root@192.168.1.240` | Autenticazione SSH Key Ed25519 |
-| **LXC Container (CT 100)** | Ambiente DEV dedicato (`expense-dev`) | `ssh root@192.168.1.6` | Autenticazione SSH Key Ed25519 |
-| **Frontend Web (DEV)** | Interfaccia utente React + Nginx | `http://192.168.1.6:3000` | Accessibile da browser su LAN |
-| **API Gateway (DEV)** | Gateway REST & Auth JWT | `http://192.168.1.6:8085` | Reverse proxied anche da `:3000/api/` |
-| **RabbitMQ Management UI** | Broker messaggi asincroni | `http://192.168.1.6:15672` | `expense_user` / `expense_pass` |
-| **PostgreSQL (DEV)** | Database locale containerizzato | `192.168.1.6:5432` | DB: `expense_tracker`, user: `expense_user` |
+| **Proxmox VE Web UI** | Hypervisor Host (Lenovo ThinkPad) | `https://192.168.50.240:8006` | Utente `root` |
+| **Proxmox Host SSH** | Accesso shell host | `ssh root@192.168.50.240` | Autenticazione SSH Key Ed25519 |
+| **LXC Container (CT 100)** | Ambiente DEV dedicato (`expense-dev`) | `ssh root@192.168.50.221` | Autenticazione SSH Key Ed25519 |
+| **Frontend Web (DEV)** | Interfaccia utente React + Nginx | `http://192.168.50.221:3000` | Accessibile da browser su LAN |
+| **API Gateway (DEV)** | Gateway REST & Auth JWT | `http://192.168.50.221:8085` | Reverse proxied anche da `:3000/api/` |
+| **RabbitMQ Management UI** | Broker messaggi asincroni | `http://192.168.50.221:15672` | `expense_user` / `expense_pass` |
+| **PostgreSQL (DEV)** | Database locale containerizzato | `192.168.50.221:5432` | DB: `expense_tracker`, user: `expense_user` |
 
 ---
 
@@ -22,7 +22,7 @@ Questo documento descrive l'architettura, la configurazione e il flusso di lavor
 
 | Aspetto | Ambiente DEV (Proxmox Locale) | Ambiente PRODUZIONE (Cloud) |
 |---|---|---|
-| **Hosting Principale** | LXC 100 su ThinkPad (`192.168.1.6`) | VM Ubuntu 24.04 su Oracle Cloud (`84.8.253.31`) |
+| **Hosting Principale** | LXC 100 su ThinkPad (`192.168.50.221`) | VM Ubuntu 24.04 su Oracle Cloud (`84.8.253.31`) |
 | **Frontend** | Nginx containerizzato su porta `3000` | Vercel Serverless CDN (`https://...vercel.app`) |
 | **Database** | PostgreSQL 17 Alpine locale (`postgres:17-alpine`) | Neon Cloud PostgreSQL (Serverless autoscaling) |
 | **Message Broker** | RabbitMQ 4 Alpine locale (`rabbitmq:4-management`) | CloudAMQP (Managed RabbitMQ) |
@@ -91,39 +91,39 @@ Tutti i comandi possono essere eseguiti direttamente dal tuo Mac via SSH verso i
 
 ### Verificare lo stato dei container:
 ```bash
-ssh root@192.168.1.6 "docker ps"
+ssh root@192.168.50.221 "docker ps"
 ```
 
 ### Consultare i log in tempo reale:
 ```bash
 # Log dell'Expense Service
-ssh root@192.168.1.6 "docker logs -f expense-tracker-expense-service"
+ssh root@192.168.50.221 "docker logs -f expense-tracker-expense-service"
 
 # Log dell'API Gateway
-ssh root@192.168.1.6 "docker logs -f expense-tracker-api-gateway"
+ssh root@192.168.50.221 "docker logs -f expense-tracker-api-gateway"
 
 # Log dell'Agente AI / OCR
-ssh root@192.168.1.6 "docker logs -f expense-tracker-expense-agent-service"
+ssh root@192.168.50.221 "docker logs -f expense-tracker-expense-agent-service"
 ```
 
 ### Aggiornare il codice sul server dev e ricompilare:
 ```bash
-ssh root@192.168.1.6 "cd /opt/expense-tracker && git pull origin develop && docker compose up -d --build"
+ssh root@192.168.50.221 "cd /opt/expense-tracker && git pull origin dev && docker compose up -d --build frontend"
 ```
 
 ### Connettersi al database PostgreSQL locale via shell:
 ```bash
-ssh root@192.168.1.6 "docker exec -it expense-tracker-postgres psql -U expense_user -d expense_tracker"
+ssh root@192.168.50.221 "docker exec -it expense-tracker-postgres psql -U expense_user -d expense_tracker"
 ```
 
 ### Riavviare o fermare lo stack:
 ```bash
 # Riavvio rapido
-ssh root@192.168.1.6 "cd /opt/expense-tracker && docker compose restart"
+ssh root@192.168.50.221 "cd /opt/expense-tracker && docker compose restart"
 
 # Stop completo
-ssh root@192.168.1.6 "cd /opt/expense-tracker && docker compose down"
+ssh root@192.168.50.221 "cd /opt/expense-tracker && docker compose down"
 
 # Avvio in background
-ssh root@192.168.1.6 "cd /opt/expense-tracker && docker compose up -d"
+ssh root@192.168.50.221 "cd /opt/expense-tracker && docker compose up -d"
 ```
