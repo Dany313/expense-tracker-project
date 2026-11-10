@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - dev
     paths-ignore:
       - 'README.md'
       - 'docs/**'
@@ -76,7 +77,7 @@ jobs:
           images: ${{ steps.image_info.outputs.image_path }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/dev' }}
             type=ref,event=branch
             type=sha,prefix=sha-
 

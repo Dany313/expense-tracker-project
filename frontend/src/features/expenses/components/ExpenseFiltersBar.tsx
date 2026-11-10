@@ -17,25 +17,35 @@ export function ExpenseFiltersBar({
   onChange,
   onReset,
 }: ExpenseFiltersBarProps) {
+  const hasActiveFilters = Boolean(
+    filters.storeName ||
+    filters.category ||
+    filters.startDate ||
+    filters.endDate ||
+    filters.shared !== undefined
+  );
+
   return (
     <section className="surface-card" aria-label="Filtri di ricerca spese">
       <div className="surface-card-header">
-        <h2 className="surface-card-title">Filtra Archivio</h2>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onReset}>
-          Reimposta filtri
-        </button>
+        <h2 className="surface-card-title">Filtri di Ricerca</h2>
+        {hasActiveFilters && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onReset}>
+            Azzera filtri
+          </button>
+        )}
       </div>
 
       <div className="filters-grid">
         <div className="field-group">
           <label htmlFor="filter-store" className="field-label">
-            Negozio
+            Cerca negozio
           </label>
           <input
             id="filter-store"
             type="search"
             className="input-control"
-            placeholder="Cerca CONAD, ALDI..."
+            placeholder="es. CONAD, ALDI, ENI..."
             enterKeyHint="search"
             value={filters.storeName ?? ''}
             onChange={(e) =>
@@ -71,7 +81,7 @@ export function ExpenseFiltersBar({
 
         <div className="field-group">
           <label htmlFor="filter-start-date" className="field-label">
-            Dal giorno
+            Data iniziale
           </label>
           <input
             id="filter-start-date"
@@ -85,23 +95,8 @@ export function ExpenseFiltersBar({
         </div>
 
         <div className="field-group">
-          <label htmlFor="filter-end-date" className="field-label">
-            Al giorno
-          </label>
-          <input
-            id="filter-end-date"
-            type="date"
-            className="input-control"
-            value={filters.endDate ?? ''}
-            onChange={(e) =>
-              onChange({ ...filters, endDate: e.target.value, page: 0 })
-            }
-          />
-        </div>
-
-        <div className="field-group">
           <label htmlFor="filter-shared" className="field-label">
-            Condivisione
+            Tipo spesa
           </label>
           <select
             id="filter-shared"
@@ -116,8 +111,8 @@ export function ExpenseFiltersBar({
             }
           >
             <option value="">Tutte le spese</option>
-            <option value="true">👥 Solo condivise</option>
-            <option value="false">Solo personali</option>
+            <option value="true">👥 Solo condivise (50%)</option>
+            <option value="false">👤 Solo personali (100%)</option>
           </select>
         </div>
       </div>

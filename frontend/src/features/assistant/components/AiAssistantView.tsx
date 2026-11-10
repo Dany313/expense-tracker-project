@@ -33,7 +33,7 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
       setErrorMsg(
         err instanceof ApiError
           ? err.message
-          : 'Errore nella comunicazione con expense-agent-service.'
+          : 'Errore nella comunicazione con il servizio AI.'
       );
     } finally {
       setBusy(false);
@@ -50,10 +50,10 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
       const job = await assistantApi.enqueueReceiptFile(selectedFile, true);
       setSelectedFile(null);
       setSuccessMsg(
-        `⏳ Scontrino accodato su RabbitMQ (Job ID: ${job.jobId}). Analisi Gemini Vision in corso...`
+        `⏳ Scontrino accodato su RabbitMQ (Job ID: ${job.jobId.slice(0, 8)}...). Analisi Gemini Vision in corso...`
       );
 
-      // Polling dello stato del job OCR fino al completamento o fallimento
+      // Polling dello stato del job OCR
       for (let attempt = 0; attempt < 25; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         try {
@@ -64,7 +64,7 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
             const ext = statusRes.extractedExpense;
             if (ext) {
               setSuccessMsg(
-                `✅ Scontrino salvato! Negozio: ${ext.storeName} — Importo: ${Number(ext.amount).toFixed(2)} € — Data scontrino: ${ext.expenseDate}`
+                `✅ Scontrino salvato! Negozio: ${ext.storeName} — Importo: ${Number(ext.amount).toFixed(2)} € — Data: ${ext.expenseDate}`
               );
             } else {
               setSuccessMsg(`✅ Scontrino elaborato e salvato con successo!`);
@@ -73,23 +73,23 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
           }
           if (statusRes.status === 'FAILED_DLQ') {
             setSuccessMsg(null);
-            setErrorMsg(`Errore OCR Scontrino: ${statusRes.message}`);
+            setErrorMsg(`Errore elaborazione scontrino: ${statusRes.message}`);
             return;
           }
         } catch {
-          // Continua il polling in caso di errore di rete transitorio
+          // Ignora errori di rete transitori durante il polling
         }
       }
 
       await onRefreshExpenses();
       setSuccessMsg(
-        `Scontrino in coda su RabbitMQ (Job ID: ${job.jobId}). L'elaborazione sta proseguendo in background.`
+        `Scontrino in coda su RabbitMQ. L'elaborazione sta proseguendo in background.`
       );
     } catch (err) {
       setErrorMsg(
         err instanceof ApiError
           ? err.message
-          : 'Errore durante l’invio dello scontrino a receipt-ocr-service.'
+          : 'Errore durante l’invio dello scontrino.'
       );
     } finally {
       setBusy(false);
@@ -98,11 +98,12 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
 
   return (
     <>
+      {/* Header */}
       <div className="page-header-block">
         <div>
           <h1 className="page-title">Assistente AI & Scansione Scontrini</h1>
           <p className="page-description">
-            Interagisci con Gemini + MCP oppure carica la foto di uno scontrino sulla coda RabbitMQ
+            Registra spese in linguaggio naturale con Gemini oppure carica la foto di uno scontrino
           </p>
         </div>
       </div>
@@ -119,80 +120,96 @@ export function AiAssistantView({ onRefreshExpenses }: AiAssistantViewProps) {
       />
 
       <div className="dashboard-split-grid">
+        {/* Comandi in Linguaggio Naturale */}
         <section className="surface-card" aria-labelledby="ai-chat-heading">
           <h2 id="ai-chat-heading" className="surface-card-title">
-            Comandi in Linguaggio Naturale (Gemini MCP)
+            Comandi Vocali / Testuali
           </h2>
           <p className="page-description">
-            Scrivi una frase come faresti su Telegram (es.{' '}
+            Scrivi liberamente come faresti con un messaggio (es.{' '}
             <em>"Ho speso 24,90 euro oggi da Conad per la spesa alimentare"</em>).
           </p>
 
           <form ref={chatFormRef} className="form-stack" onSubmit={handleAgentSubmit}>
             <div className="field-group">
               <label htmlFor="agent-prompt" className="field-label">
-                Messaggio per l’Agente AI *
+                Testo del messaggio
               </label>
               <textarea
                 id="agent-prompt"
                 rows={3}
                 className="input-control"
-                placeholder="Es. Registra 18,50 euro spesi ieri da Tigotà per igiene casa..."
+                placeholder="es. Pagato 18,50 euro da Tigotà per detersivi e igiene casa..."
                 required
                 value={agentPrompt}
                 onChange={(e) => setAgentPrompt(e.target.value)}
               />
             </div>
 
-            <div className="row-actions">
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button type="submit" className="btn btn-primary" disabled={busy}>
-                {busy ? 'Elaborazione Gemini...' : 'Invia a Gemini'}
+                {busy ? 'Elaborazione in corso...' : 'Invia a Gemini'}
               </button>
             </div>
           </form>
 
           {agentReply && (
-            <div className="status-banner status-banner-success" role="status">
-              <span>
-                <strong>Risposta Gemini:</strong> {agentReply}
-              </span>
+            <div
+              style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-accent-soft)',
+                border: '1px solid var(--color-accent-border)',
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem',
+                lineHeight: 1.5,
+              }}
+            >
+              <strong style={{ color: 'var(--color-accent)', display: 'block', marginBottom: '0.25rem' }}>
+                🤖 Risposta dell'Assistente:
+              </strong>
+              {agentReply}
             </div>
           )}
         </section>
 
+        {/* Scansione Foto Scontrino */}
         <section className="surface-card" aria-labelledby="ocr-upload-heading">
           <h2 id="ocr-upload-heading" className="surface-card-title">
-            Scansione Foto Scontrino (OCR + Coda RabbitMQ)
+            Scansione Foto Scontrino
           </h2>
           <p className="page-description">
-            Carica la foto dello scontrino: verrà accodata su{' '}
-            <code>receipt.ocr.job.queue</code> e salvata automaticamente su PostgreSQL.
+            Carica o scatta una foto: i dati verranno estratti automaticamente e salvati su PostgreSQL.
           </p>
 
           <form className="form-stack" onSubmit={handleReceiptUpload}>
             <label htmlFor="receipt-file" className="upload-dropzone">
-              <strong>
+              <span style={{ fontSize: '2rem' }} aria-hidden="true">
+                📷
+              </span>
+              <strong style={{ fontSize: '0.95rem' }}>
                 {selectedFile
-                  ? `File selezionato: ${selectedFile.name}`
-                  : 'Seleziona o scatta la foto dello scontrino'}
+                  ? `Selezionato: ${selectedFile.name}`
+                  : 'Tocca per scattare o scegliere la foto dello scontrino'}
               </strong>
-              <span className="field-hint">Formati supportati: JPEG, PNG, WEBP, HEIC</span>
+              <span className="field-hint">Supporta JPEG, PNG, WEBP o HEIC</span>
               <input
                 id="receipt-file"
                 type="file"
                 accept="image/*"
-                className="input-control"
+                style={{ display: 'none' }}
                 onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
               />
             </label>
 
-            <div className="row-actions">
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="submit"
                 className="btn btn-primary"
                 disabled={!selectedFile || busy}
               >
-                {busy ? 'Accodamento...' : 'Estrai e Salva Scontrino'}
+                {busy ? 'Analisi in coda...' : 'Estrai e Salva'}
               </button>
             </div>
           </form>

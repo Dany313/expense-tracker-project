@@ -67,26 +67,27 @@ export function CreateExpenseView({
   };
 
   return (
-    <>
-      <div className="page-header-block">
+    <div style={{ maxWidth: '42rem', marginInline: 'auto', width: '100%' }}>
+      <div className="page-header-block" style={{ marginBottom: '1.25rem' }}>
         <div>
           <h1 className="page-title">Nuova Spesa</h1>
           <p className="page-description">
-            Registra manualmente un nuovo movimento contabile
+            Inserisci i dati del movimento contabile da salvare
           </p>
         </div>
       </div>
 
-      <section className="surface-card" aria-labelledby="new-expense-form-title">
-        <h2 id="new-expense-form-title" className="surface-card-title">
-          Dettagli Movimento
+      <section className="surface-card" aria-labelledby="new-expense-card-title">
+        <h2 id="new-expense-card-title" className="surface-card-title">
+          Dettagli Spesa
         </h2>
 
         <form ref={formRef} className="form-stack" onSubmit={handleSubmit}>
+          {/* Data e Importo */}
           <div className="form-grid-2">
             <div className="field-group">
               <label htmlFor="create-date" className="field-label">
-                Data della spesa *
+                Data *
               </label>
               <input
                 id="create-date"
@@ -110,8 +111,8 @@ export function CreateExpenseView({
                 step="0.01"
                 min="0.01"
                 inputMode="decimal"
-                placeholder="es. 38.50"
-                className="input-control"
+                placeholder="es. 42.50"
+                className="input-control font-mono"
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -119,6 +120,7 @@ export function CreateExpenseView({
             </div>
           </div>
 
+          {/* Negozio ed Esercente */}
           <div className="form-grid-2">
             <div className="field-group">
               <label htmlFor="create-store" className="field-label">
@@ -130,7 +132,7 @@ export function CreateExpenseView({
                 type="text"
                 list="known-stores-list"
                 maxLength={150}
-                placeholder="es. CONAD, ALDI, TIGOTA..."
+                placeholder="es. CONAD, TIGOTÀ, ENI..."
                 className="input-control"
                 required
                 value={storeName}
@@ -164,6 +166,7 @@ export function CreateExpenseView({
             </div>
           </div>
 
+          {/* Sottocategoria e Note */}
           <div className="form-grid-2">
             <div className="field-group">
               <label htmlFor="create-subcategory" className="field-label">
@@ -173,7 +176,7 @@ export function CreateExpenseView({
                 id="create-subcategory"
                 name="subcategory"
                 type="text"
-                placeholder="es. Spesa settimanale, Farmacia..."
+                placeholder="es. Spesa settimanale, Pranzo..."
                 className="input-control"
                 value={subcategory}
                 onChange={(e) => setSubcategory(e.target.value)}
@@ -182,13 +185,13 @@ export function CreateExpenseView({
 
             <div className="field-group">
               <label htmlFor="create-description" className="field-label">
-                Note aggiuntive (Opzionale)
+                Note o promemoria (Opzionale)
               </label>
               <input
                 id="create-description"
                 name="description"
                 type="text"
-                placeholder="Dettagli o promemoria..."
+                placeholder="Dettagli aggiuntivi..."
                 className="input-control"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -196,17 +199,8 @@ export function CreateExpenseView({
             </div>
           </div>
 
+          {/* Opzioni Condivisa e Ricorrente */}
           <div className="form-grid-2">
-            <label className="checkbox-card" htmlFor="create-recurring">
-              <input
-                id="create-recurring"
-                type="checkbox"
-                checked={recurring}
-                onChange={(e) => setRecurring(e.target.checked)}
-              />
-              <span>Spesa periodica / ricorrente</span>
-            </label>
-
             <label className="checkbox-card" htmlFor="create-shared">
               <input
                 id="create-shared"
@@ -214,17 +208,47 @@ export function CreateExpenseView({
                 checked={shared}
                 onChange={(e) => setShared(e.target.checked)}
               />
-              <span>👥 Spesa condivisa (divisa al 50%)</span>
+              <span>👥 Spesa condivisa (calcola quota al 50%)</span>
+            </label>
+
+            <label className="checkbox-card" htmlFor="create-recurring">
+              <input
+                id="create-recurring"
+                type="checkbox"
+                checked={recurring}
+                onChange={(e) => setRecurring(e.target.checked)}
+              />
+              <span>🔄 Spesa ricorrente / periodica</span>
             </label>
           </div>
 
-          <div className="row-actions">
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Registrazione in corso...' : 'Salva Spesa'}
+          {/* Azioni in fondo: su mobile si impilano con il salvataggio in cima */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+              justifyContent: 'flex-end',
+              marginTop: '0.5rem',
+              flexDirection: 'row',
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onSuccessNavigateArchive}
+            >
+              Annulla
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? 'Salvataggio...' : 'Salva Movimento'}
             </button>
           </div>
         </form>
       </section>
-    </>
+    </div>
   );
 }

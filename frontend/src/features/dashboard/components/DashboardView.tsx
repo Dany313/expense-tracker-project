@@ -1,4 +1,6 @@
 import { useSplitShared } from '../../../core/context/SplitSharedContext';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { Skeleton } from '../../../shared/components/Skeleton';
 import { resolveCategoryLabel } from '../../../shared/utils/constants';
 import { formatCurrency, formatDateIt } from '../../../shared/utils/formatters';
 import type {
@@ -25,9 +27,9 @@ export function DashboardView({
   loading,
   onNavigateCreate,
   onNavigateArchive,
-  onNavigateMonthly,
 }: DashboardViewProps) {
   const { splitShared, getEffectiveAmount } = useSplitShared();
+
   const topCategoryCode =
     summary && Object.keys(summary.amountByCategory).length > 0
       ? Object.entries(summary.amountByCategory).sort((a, b) => b[1] - a[1])[0][0]
@@ -35,26 +37,19 @@ export function DashboardView({
 
   return (
     <>
+      {/* Header */}
       <div className="page-header-block">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <h1 className="page-title">Panoramica Finanziaria</h1>
-            {splitShared && (
-              <span className="badge badge-shared" title="Filtro globale attivo: importi e statistiche riflettono la quota al 50% sulle spese condivise">
-                👥 Quota 50% Condivise
-              </span>
-            )}
-          </div>
+          <h1 className="page-title">Panoramica Finanziaria</h1>
           <p className="page-description">
-            Statistiche in tempo reale calcolate sullo storico spese
+            {splitShared
+              ? 'Statistiche calcolate con quota al 50% sulle spese condivise'
+              : 'Statistiche in tempo reale calcolate sull’intero storico spese'}
           </p>
         </div>
-        <div className="toolbar-actions">
-          <button type="button" className="btn btn-secondary" onClick={onNavigateMonthly}>
-            📅 Spese Mensili
-          </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-secondary" onClick={onNavigateArchive}>
-            Esplora Archivio
+            Archivio
           </button>
           <button type="button" className="btn btn-primary" onClick={onNavigateCreate}>
             + Nuova Spesa
@@ -62,37 +57,56 @@ export function DashboardView({
         </div>
       </div>
 
+      {/* KPI Cards */}
       <section className="kpi-grid" aria-label="Indicatori chiave di spesa">
         <article className="kpi-card">
           <span className="kpi-label">Totale Speso</span>
-          <p className="kpi-value">{formatCurrency(summary?.totalAmount)}</p>
-          <span className="kpi-caption">Cumulativo sul periodo</span>
+          {loading && !summary ? (
+            <Skeleton height="2rem" />
+          ) : (
+            <p className="kpi-value">{formatCurrency(summary?.totalAmount)}</p>
+          )}
+          <span className="kpi-caption">Cumulativo registrato</span>
         </article>
 
         <article className="kpi-card">
-          <span className="kpi-label">Spesa Mensile Media</span>
-          <p className="kpi-value">{formatCurrency(summary?.averageMonthlyAmount)}</p>
-          <span className="kpi-caption">Media ponderata per mese attivo</span>
+          <span className="kpi-label">Media Mensile</span>
+          {loading && !summary ? (
+            <Skeleton height="2rem" />
+          ) : (
+            <p className="kpi-value">{formatCurrency(summary?.averageMonthlyAmount)}</p>
+          )}
+          <span className="kpi-caption">Spesa media per mese attivo</span>
         </article>
 
         <article className="kpi-card">
-          <span className="kpi-label">Spesa Totale Mese Corrente</span>
-          <p className="kpi-value">
-            {formatCurrency(summary?.currentMonthTotalAmount)}
-          </p>
-          <span className="kpi-caption">Uscite registrate nel mese in corso</span>
+          <span className="kpi-label">Mese Corrente</span>
+          {loading && !summary ? (
+            <Skeleton height="2rem" />
+          ) : (
+            <p className="kpi-value">
+              {formatCurrency(summary?.currentMonthTotalAmount)}
+            </p>
+          )}
+          <span className="kpi-caption">Uscite del mese in corso</span>
         </article>
 
         <article className="kpi-card">
-          <span className="kpi-label">Categoria Principale</span>
-          <p className="kpi-value">
-            {topCategoryCode ? resolveCategoryLabel(topCategoryCode, categories) : '—'}
-          </p>
-          <span className="kpi-caption">Maggiore incidenza sul budget</span>
+          <span className="kpi-label">Top Categoria</span>
+          {loading && !summary ? (
+            <Skeleton height="2rem" />
+          ) : (
+            <p className="kpi-value" style={{ fontSize: '1.15rem' }}>
+              {topCategoryCode ? resolveCategoryLabel(topCategoryCode, categories) : '—'}
+            </p>
+          )}
+          <span className="kpi-caption">Maggiore incidenza di spesa</span>
         </article>
       </section>
 
+      {/* Main Split Grid */}
       <div className="dashboard-split-grid">
+        {/* Ultimi Movimenti */}
         <section className="surface-card" aria-labelledby="recent-expenses-heading">
           <div className="surface-card-header">
             <h2 id="recent-expenses-heading" className="surface-card-title">
@@ -103,18 +117,26 @@ export function DashboardView({
               className="btn btn-ghost btn-sm"
               onClick={onNavigateArchive}
             >
-              Vedi tutti →
+              Vedi tutti ({summary?.totalCount ?? recentExpenses.length}) →
             </button>
           </div>
 
           {loading && recentExpenses.length === 0 ? (
-            <div className="empty-state">
-              <p>Caricamento ultimi movimenti...</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <Skeleton height="3rem" />
+              <Skeleton height="3rem" />
+              <Skeleton height="3rem" />
             </div>
           ) : recentExpenses.length === 0 ? (
-            <div className="empty-state">
-              <p>Nessun movimento registrato.</p>
-            </div>
+            <EmptyState
+              icon="💳"
+              title="Nessun movimento presente"
+              description="Inizia registrando la tua prima spesa manuale o caricando la foto di uno scontrino."
+              action={{
+                label: "+ Aggiungi Spesa",
+                onClick: onNavigateCreate,
+              }}
+            />
           ) : (
             <div className="table-scroll-wrapper">
               <table className="expense-table">
@@ -129,17 +151,19 @@ export function DashboardView({
                 <tbody>
                   {recentExpenses.slice(0, 6).map((item) => (
                     <tr key={item.id}>
-                      <td>{formatDateIt(item.expenseDate)}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {formatDateIt(item.expenseDate)}
+                      </td>
                       <td>
-                        <div>
-                          <strong>{item.storeName}</strong>
-                        </div>
+                        <strong>{item.storeName}</strong>
                         {item.shared && (
-                          <div style={{ marginTop: '0.2rem' }}>
-                            <span className="badge badge-shared" title="Spesa condivisa al 50%">
-                              👥 Condivisa
-                            </span>
-                          </div>
+                          <span
+                            className="badge badge-shared"
+                            style={{ marginLeft: '0.4rem' }}
+                            title="Spesa condivisa al 50%"
+                          >
+                            50%
+                          </span>
                         )}
                       </td>
                       <td>
@@ -149,13 +173,16 @@ export function DashboardView({
                       </td>
                       <td className="amount-cell text-end">
                         <div>
-                          <strong>{formatCurrency(getEffectiveAmount(item.amount, item.shared))}</strong>
-                          {splitShared && item.shared && (
-                            <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 400 }}>
-                              tot. {formatCurrency(item.amount)}
-                            </div>
-                          )}
+                          {formatCurrency(getEffectiveAmount(item.amount, item.shared))}
                         </div>
+                        {splitShared && item.shared && (
+                          <div
+                            className="text-muted"
+                            style={{ fontSize: '0.72rem', fontWeight: 400 }}
+                          >
+                            tot. {formatCurrency(item.amount)}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -165,18 +192,27 @@ export function DashboardView({
           )}
         </section>
 
+        {/* Distribuzione per Categoria */}
         <section className="surface-card" aria-labelledby="category-breakdown-heading">
           <div className="surface-card-header">
             <h2 id="category-breakdown-heading" className="surface-card-title">
-              Distribuzione per Categoria
+              Distribuzione Spese
             </h2>
           </div>
 
-          <CategoryBreakdown
-            amountByCategory={summary?.amountByCategory ?? {}}
-            totalAmount={summary?.totalAmount ?? 0}
-            categories={categories}
-          />
+          {loading && !summary ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <Skeleton height="1.5rem" />
+              <Skeleton height="1.5rem" />
+              <Skeleton height="1.5rem" />
+            </div>
+          ) : (
+            <CategoryBreakdown
+              amountByCategory={summary?.amountByCategory ?? {}}
+              totalAmount={summary?.totalAmount ?? 0}
+              categories={categories}
+            />
+          )}
         </section>
       </div>
     </>
